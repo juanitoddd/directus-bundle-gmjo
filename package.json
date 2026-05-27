@@ -1,0 +1,52 @@
+{
+  "name": "directus-bundle-gmjo",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "GMJO project Directus bundle (panels, interfaces, tools).",
+  "keywords": [
+    "directus",
+    "directus-extension",
+    "directus-custom-bundle"
+  ],
+  "directus:extension": {
+    "type": "bundle",
+    "path": {
+      "app": "dist/app.js",
+      "api": "dist/api.js"
+    },
+    "entries": [
+      {
+        "type": "panel",
+        "name": "flow-triggers",
+        "source": "src/flow-triggers/index.ts"
+      },
+      {
+        "type": "display",
+        "name": "block-editor-preview",
+        "source": "src/block-editor-preview/index.ts"
+      },
+      {
+        "type": "display",
+        "name": "translated-block-editor-preview",
+        "source": "src/translated-block-editor-preview/index.ts"
+      },
+      {
+        "type": "display",
+        "name": "m2a-translated-blocks",
+        "source": "src/m2a-translated-blocks/index.ts"
+      }
+    ],
+    "host": "^10.10.0 || ^11.0.0"
+  },
+  "scripts": {
+    "build": "directus-extension build",
+    "dev": "directus-extension build -w --no-minify",
+    "link": "directus-extension link",
+    "add": "directus-extension add"
+  },
+  "devDependencies": {
+    "@directus/extensions-sdk": "^17.1.4",
+    "typescript": "^5.5.0",
+    "vue": "^3.4.0"
+  }
+}
