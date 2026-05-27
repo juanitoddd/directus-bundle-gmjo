@@ -78,6 +78,17 @@ export default definePanel({
 								note: 'Optional JSON body POSTed to the flow trigger.',
 							},
 						},
+						{
+							field: 'auth_token',
+							name: 'Auth token (optional)',
+							type: 'string',
+							meta: {
+								interface: 'input',
+								options: { masked: true },
+								width: 'full',
+								note: 'Sent as `Authorization: Bearer <token>`, overriding the dashboard user\'s session for this button. WARNING: stored as plaintext in this panel\'s config — anyone who can read this dashboard can read this token. Prefer a dedicated low-privilege user.',
+							},
+						},
 					],
 				},
 			},

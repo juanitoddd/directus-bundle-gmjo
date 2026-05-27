@@ -22,8 +22,8 @@
 
 		<v-dialog v-model="confirmOpen" @esc="cancelConfirm">
 			<v-card>
-				<v-card-title>{{ pending?.btn.label }}</v-card-title>
-				<v-card-text>{{ pending?.btn.confirm_message }}</v-card-text>
+				<v-card-title>{{ pendingBtn?.label }}</v-card-title>
+				<v-card-text>{{ pendingBtn?.confirm_message }}</v-card-text>
 				<v-card-actions>
 					<v-button secondary @click="cancelConfirm">Cancel</v-button>
 					<v-button @click="acceptConfirm">Run</v-button>
@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useApi, useStores } from '@directus/extensions-sdk';
 
 interface ButtonConfig {
@@ -44,6 +44,7 @@ interface ButtonConfig {
 	color?: string;
 	confirm_message?: string;
 	payload?: unknown;
+	auth_token?: string;
 }
 
 const props = withDefaults(
@@ -64,6 +65,7 @@ const notifications = useNotificationsStore();
 const loading = reactive<Record<number, boolean>>({});
 const confirmOpen = ref(false);
 const pending = ref<{ btn: ButtonConfig; idx: number } | null>(null);
+const pendingBtn = computed(() => pending.value?.btn);
 
 function onClick(btn: ButtonConfig, idx: number) {
 	if (btn.confirm_message) {
@@ -90,7 +92,10 @@ function acceptConfirm() {
 async function run(btn: ButtonConfig, idx: number) {
 	loading[idx] = true;
 	try {
-		await api.post(`/flows/trigger/${btn.flow_id}`, btn.payload ?? {});
+		const config = btn.auth_token
+			? { headers: { Authorization: `Bearer ${btn.auth_token}` } }
+			: undefined;
+		await api.post(`/flows/trigger/${btn.flow_id}`, btn.payload ?? {}, config);
 		notifications.add({
 			title: `${btn.label}: triggered`,
 			type: 'success',
