@@ -19,21 +19,6 @@
         "type": "panel",
         "name": "flow-triggers",
         "source": "src/flow-triggers/index.ts"
-      },
-      {
-        "type": "display",
-        "name": "block-editor-preview",
-        "source": "src/block-editor-preview/index.ts"
-      },
-      {
-        "type": "display",
-        "name": "translated-block-editor-preview",
-        "source": "src/translated-block-editor-preview/index.ts"
-      },
-      {
-        "type": "display",
-        "name": "m2a-translated-blocks",
-        "source": "src/m2a-translated-blocks/index.ts"
       }
     ],
     "host": "^10.10.0 || ^11.0.0"
