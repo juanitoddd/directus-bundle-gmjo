@@ -4,7 +4,7 @@ import InterfaceBlockEditor from './input-block-editor.vue';
 export default defineInterface({
 	id: 'custom-input-block-editor',
 	name: 'Custom Input Block Editor',
-	description: 'Custom block editor',
+	description: 'Custom input block editor',
 	icon: 'code',
 	component: InterfaceBlockEditor,
 	types: ['json'],
