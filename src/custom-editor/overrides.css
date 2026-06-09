@@ -66,3 +66,185 @@
 .editorjs__weight-selector__container-item:hover {
 	transform: scale(1.1);
 }
+
+/* HTML block display */
+.codex-editor .ce-html-block {
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	padding: 0.75rem;
+	background: var(--theme--background-subdued);
+}
+
+.codex-editor .ce-html-block__editor {
+	width: 100%;
+	height: 8rem;
+	padding: 0.6rem;
+	font-family: var(--theme--fonts--monospace--font-family);
+	font-size: 0.95rem;
+	color: var(--theme--form--field--input--foreground);
+	background: var(--theme--form--field--input--background);
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	resize: vertical;
+}
+
+.codex-editor .ce-html-block__preview {
+	margin-top: 0.75rem;
+	padding: 0.75rem;
+	background: var(--theme--background-normal);
+	border-radius: var(--theme--border-radius);
+	border: 1px solid var(--theme--form--field--input--border-color);
+}
+
+.codex-editor .ce-html-block__placeholder {
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+/* Flex block styles */
+.codex-editor .ce-flex-block {
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	padding: 0.75rem;
+	background: var(--theme--background-subdued);
+}
+
+.codex-editor .ce-flex-block__controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 0.75rem;
+}
+
+.codex-editor .ce-flex-block__text-input,
+.codex-editor .ce-flex-block__select {
+	padding: 0.5rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--form--field--input--background);
+	color: var(--theme--form--field--input--foreground);
+}
+
+.codex-editor .ce-flex-block__button {
+	padding: 0.5rem 0.8rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	border-radius: var(--theme--border-radius);
+	cursor: pointer;
+}
+
+.codex-editor .ce-flex-block__button:hover {
+	background: var(--theme--background-accent);
+}
+
+.codex-editor .ce-flex-block__preview {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+.codex-editor .ce-flex-block__item {
+	position: relative;
+	padding: 0.55rem 0.75rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	min-width: 4rem;
+	display: flex;
+	display: -webkit-flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.codex-editor .ce-flex-block__item-text {
+	font-size: 0.95rem;
+}
+
+.codex-editor .ce-flex-block__item-caption {
+	font-size: 0.85rem;
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+.codex-editor .ce-flex-block__item-image {
+	max-width: 120px;
+	height: auto;
+	display: block;
+}
+
+.codex-editor .ce-flex-block__item-controls {
+	display: flex;
+	gap: 0.25rem;
+	flex-wrap: wrap;
+}
+
+.codex-editor .ce-flex-block__item-control {
+	padding: 0.2rem 0.5rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	border-radius: var(--theme--border-radius);
+	cursor: pointer;
+	font-size: 0.85rem;
+}
+
+.codex-editor .ce-flex-block__item-control:hover {
+	background: var(--theme--background-accent);
+}
+
+.codex-editor .ce-flex-block__layout-controls {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.codex-editor .ce-flex-block__field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	min-width: 12rem;
+}
+
+.codex-editor .ce-flex-block__field-label {
+	font-size: 0.8rem;
+	color: var(--theme--form--field--hint--foreground);
+}
+
+.codex-editor .ce-flex-block__button--primary {
+	background: var(--theme--color-primary);
+	color: var(--theme--color-on-primary);
+	border-color: transparent;
+}
+
+.codex-editor .ce-flex-block__button--secondary {
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	border-color: var(--theme--form--field--input--border-color);
+}
+
+.codex-editor .ce-flex-block__editor-panel {
+	margin-top: 0.75rem;
+	padding: 0.85rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	background: var(--theme--background-normal);
+	border-radius: var(--theme--border-radius);
+	display: grid;
+	gap: 0.75rem;
+}
+
+.codex-editor .ce-flex-block__editor-panel-title {
+	font-size: 0.95rem;
+	font-weight: 600;
+}
+
+.codex-editor .ce-flex-block__editor-panel-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
+.codex-editor .ce-flex-block__item-header {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--theme--form--field--input--foreground-subdued);
+}

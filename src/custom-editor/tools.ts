@@ -16,6 +16,8 @@ import { AttachesTool, ImageTool } from './plugins';
 import { BlockFormat } from './block-format';
 import { FontWeightBlock, FontWeightInline } from './font-weight';
 import { ClassWrapBlock, ClassWrapInline } from './class-wrap';
+import HTMLBlock from './html-block';
+import FlexBlock from './flex-block';
 import ColorPicker from 'editorjs-color-picker';
 import WeightPicker from './weights';
 // EXAMPLE (Part 3/4): add marker tool
@@ -36,7 +38,7 @@ export default function getTools(
     const tools: Record<string, any> = {};
     const fileRequiresTools = new Set(['attaches', 'image']);
 
-    const inlineTools = ['link', 'ColorPicker', 'WeightPicker', 'underline'];
+    const inlineTools = ['link', 'ColorPicker', 'WeightPicker', 'underline', 'italic'];
 
     const defaults: Record<string, any> = {
         header: {
@@ -83,13 +85,16 @@ export default function getTools(
             class: UnderlineTool,
         },
         /*
-        embed: {
-            class: EmbedTool,
-            inlineToolbar: true,
-        },        
         code: {
             class: CodeTool,
         },        
+        embed: {
+            class: EmbedTool,
+            inlineToolbar: true,
+        },
+        raw: {
+            class: RawToolTool,
+        },
         table: {
             class: TableTool,
             inlineToolbar: true,
@@ -101,10 +106,7 @@ export default function getTools(
         },
         inlinecode: {
             class: InlineCodeTool,
-        },        
-        raw: {
-            class: RawToolTool,
-        },
+        },                
         */
         /*
         checklist: {
@@ -127,6 +129,15 @@ export default function getTools(
         WeightPicker: {
             class: WeightPicker,
             inlineToolbar: true,
+        },
+        flexblock: {
+            class: FlexBlock,
+            config: {
+                uploader: uploaderConfig,
+            },
+        },
+        htmlblock: {
+            class: HTMLBlock,
         },
         // EXAMPLE (Part 4/4): add marker tool
         //     class: Marker,

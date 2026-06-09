@@ -30,13 +30,17 @@ const props = withDefaults(
 			'header',
 			'nestedlist',
 			/*
+			'embed',
+			'raw',
 			'code',
 			*/			
 			'image',
 			'paragraph',
 			'underline',
 			'ColorPicker',
-			'WeightPicker',			
+			'WeightPicker',
+			'htmlblock',
+			'flexblock',
 		],
 		font: 'sans-serif',
 	},
