@@ -17,7 +17,7 @@
 }
 
 .codex-editor .ce-popover__items {
-	overflow-y: hidden;
+	/* overflow-y: hidden; */
 	gap: 2px;
 }
 

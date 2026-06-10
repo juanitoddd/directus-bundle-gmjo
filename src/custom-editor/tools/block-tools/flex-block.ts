@@ -6,13 +6,11 @@ interface FlexBlockItem {
 	text?: string;
 	imageUrl?: string;
 	caption?: string;
+	link?: string;
 }
 
 interface FlexBlockData {
 	items: FlexBlockItem[];
-	direction: 'row' | 'column';
-	justify: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around';
-	align: 'stretch' | 'flex-start' | 'center' | 'flex-end';
 }
 
 function createId() {
@@ -24,6 +22,7 @@ export default class FlexBlock {
 	private config: any;
 	private preview: HTMLElement | null = null;
 	private textInput: HTMLInputElement | null = null;
+	private linkInput: HTMLInputElement | null = null;
 	private block: any;
 
 	static get toolbox() {
@@ -38,9 +37,6 @@ export default class FlexBlock {
 		this.block = block;
 		this.data = {
 			items: Array.isArray((data as FlexBlockData)?.items) ? (data as FlexBlockData).items : [],
-			direction: (data as FlexBlockData)?.direction || 'row',
-			justify: (data as FlexBlockData)?.justify || 'flex-start',
-			align: (data as FlexBlockData)?.align || 'center',
 		};
 	}
 
@@ -59,6 +55,13 @@ export default class FlexBlock {
 		this.textInput.placeholder = 'Add flex item text';
 		this.textInput.classList.add('ce-flex-block__text-input');
 		textField.appendChild(this.textInput);
+
+		this.linkInput = document.createElement('input');
+		this.linkInput.type = 'url';
+		this.linkInput.placeholder = 'Optional link (https://...)';
+		this.linkInput.classList.add('ce-flex-block__text-input');
+		textField.appendChild(this.linkInput);
+
 		controls.appendChild(textField);
 
 		const addTextButton = document.createElement('button');
@@ -69,8 +72,10 @@ export default class FlexBlock {
 			if (!this.textInput) return;
 			const value = this.textInput.value.trim();
 			if (!value) return;
-			this.data.items.push({ id: createId(), type: 'text', text: value });
+			const link = this.linkInput?.value.trim() || '';
+			this.data.items.push({ id: createId(), type: 'text', text: value, link });
 			this.textInput.value = '';
+			if (this.linkInput) this.linkInput.value = '';
 			this.renderPreview();
 			this.block?.dispatchChange();
 		});
@@ -83,28 +88,7 @@ export default class FlexBlock {
 		addImageButton.addEventListener('click', () => this.openImageUploader());
 		controls.appendChild(addImageButton);
 
-		const layoutControls = document.createElement('div');
-		layoutControls.classList.add('ce-flex-block__layout-controls');
-
-		layoutControls.appendChild(this.createLabeledSelect('Direction', ['row', 'column'], this.data.direction, (value) => {
-			this.data.direction = value as FlexBlockData['direction'];
-			this.renderPreview();
-			this.block?.dispatchChange();
-		}));
-
-		layoutControls.appendChild(this.createLabeledSelect('Justify', ['flex-start', 'center', 'flex-end', 'space-between', 'space-around'], this.data.justify, (value) => {
-			this.data.justify = value as FlexBlockData['justify'];
-			this.renderPreview();
-			this.block?.dispatchChange();
-		}));
-
-		layoutControls.appendChild(this.createLabeledSelect('Align', ['stretch', 'flex-start', 'center', 'flex-end'], this.data.align, (value) => {
-			this.data.align = value as FlexBlockData['align'];
-			this.renderPreview();
-			this.block?.dispatchChange();
-		}));
-
-		controls.appendChild(layoutControls);
+		// Layout controls are now handled by the flex tune, keeping the block UI cleaner.
 
 		this.preview = document.createElement('div');
 		this.preview.classList.add('ce-flex-block__preview');
@@ -113,30 +97,6 @@ export default class FlexBlock {
 		wrapper.appendChild(this.preview);
 
 		this.renderPreview();
-
-		return wrapper;
-	}
-
-	createLabeledSelect(labelText: string, options: string[], current: string, onChange: (value: string) => void) {
-		const wrapper = document.createElement('div');
-		wrapper.classList.add('ce-flex-block__field');
-
-		const label = document.createElement('label');
-		label.classList.add('ce-flex-block__field-label');
-		label.textContent = labelText;
-		wrapper.appendChild(label);
-
-		const select = document.createElement('select');
-		select.classList.add('ce-flex-block__select');
-		options.forEach((optionValue) => {
-			const option = document.createElement('option');
-			option.value = optionValue;
-			option.textContent = optionValue;
-			option.selected = optionValue === current;
-			select.appendChild(option);
-		});
-		select.addEventListener('change', () => onChange(select.value));
-		wrapper.appendChild(select);
 
 		return wrapper;
 	}
@@ -152,7 +112,7 @@ export default class FlexBlock {
 			}
 
 			const imageUrl = `${this.config.uploader.baseURL}assets/${file.id}`;
-			this.data.items.push({ id: createId(), type: 'image', imageUrl, caption: '' });
+			this.data.items.push({ id: createId(), type: 'image', imageUrl, caption: '', link: '' });
 			this.renderPreview();
 			this.block?.dispatchChange();
 		});
@@ -193,6 +153,12 @@ export default class FlexBlock {
 			}
 		});
 		editPanel.appendChild(field.wrapper);
+
+		const linkField = this.createEditorField('Link', item.link || '');
+		linkField.input.addEventListener('input', () => {
+			item.link = linkField.input.value;
+		});
+		editPanel.appendChild(linkField.wrapper);
 
 		const actions = document.createElement('div');
 		actions.classList.add('ce-flex-block__editor-panel-actions');
@@ -239,16 +205,14 @@ export default class FlexBlock {
 	}
 
 	renderPreview() {
-		if (!this.preview) return;
-		this.preview.innerHTML = '';
-		this.preview.style.display = 'flex';
-		this.preview.style.flexWrap = 'wrap';
-		this.preview.style.flexDirection = this.data.direction;
-		this.preview.style.justifyContent = this.data.justify;
-		this.preview.style.alignItems = this.data.align;
-		this.preview.style.gap = '0.75rem';
+		const preview = this.preview;
+		if (!preview) return;
+		preview.innerHTML = '';
+		preview.style.display = 'flex';
+		preview.style.flexWrap = 'wrap';
+		preview.style.gap = '0.75rem';
 
-		const existingPanel = this.preview.parentElement?.querySelector('.ce-flex-block__editor-panel');
+		const existingPanel = preview.parentElement?.querySelector('.ce-flex-block__editor-panel');
 		if (existingPanel) {
 			existingPanel.remove();
 		}
@@ -266,16 +230,35 @@ export default class FlexBlock {
 				const textNode = document.createElement('div');
 				textNode.classList.add('ce-flex-block__item-text');
 				textNode.textContent = item.text || '';
-				itemElement.appendChild(textNode);
+				if (item.link) {
+					const anchor = document.createElement('a');
+					anchor.href = item.link;
+					anchor.target = '_blank';
+					anchor.rel = 'noopener noreferrer';
+					anchor.appendChild(textNode);
+					itemElement.appendChild(anchor);
+				} else {
+					itemElement.appendChild(textNode);
+				}
 			} else if (item.type === 'image' && item.imageUrl) {
 				const img = document.createElement('img');
 				img.src = item.imageUrl;
 				img.classList.add('ce-flex-block__item-image');
-				itemElement.appendChild(img);
 
 				const captionNode = document.createElement('div');
 				captionNode.classList.add('ce-flex-block__item-caption');
 				captionNode.textContent = item.caption || 'No caption';
+
+				if (item.link) {
+					const anchor = document.createElement('a');
+					anchor.href = item.link;
+					anchor.target = '_blank';
+					anchor.rel = 'noopener noreferrer';
+					anchor.appendChild(img);
+					itemElement.appendChild(anchor);
+				} else {
+					itemElement.appendChild(img);
+				}
 				itemElement.appendChild(captionNode);
 			}
 
@@ -315,7 +298,7 @@ export default class FlexBlock {
 			controls.appendChild(removeButton);
 
 			itemElement.appendChild(controls);
-			this.preview.appendChild(itemElement);
+			preview.appendChild(itemElement);
 		});
 	}
 

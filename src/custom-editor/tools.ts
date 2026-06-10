@@ -17,6 +17,7 @@ import { BlockFormat } from './tools/tunes/block-format';
 import { ClassWrapBlock, ClassWrapInline } from './tools/inline-tools/class-wrap';
 import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
+import { Flex } from './tools/tunes/flex';
 import ColorPicker from 'editorjs-color-picker';
 import WeightPicker from './tools/inline-tools/weights';
 import FontFamilyPicker from './tools/inline-tools/fontfamily';
@@ -157,6 +158,10 @@ export default function getTools(
             config: {
                 uploader: uploaderConfig,
             },
+            tunes: ['flex'],
+        },
+        flex: {
+            class: Flex,
         },
         htmlblock: {
             class: HTMLBlock,
@@ -183,6 +188,10 @@ export default function getTools(
 
     if (!tools.format && 'format' in defaults) {
         tools.format = defaults.format;
+    }
+
+    if (!tools.flex && 'flex' in defaults) {
+        tools.flex = defaults.flex;
     }
 
     // Add alignment and format to all tools that support them.
