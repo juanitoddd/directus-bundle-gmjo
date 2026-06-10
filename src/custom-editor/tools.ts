@@ -29,6 +29,7 @@ export interface UploaderConfig {
     setFileHandler: (handler: any) => void;
     setCurrentPreview?: (url: string) => void;
     getUploadFieldElement: () => any;
+    openFlexEditor?: (params: { data?: any; callback: (item: any) => void }) => void;
 }
 
 export default function getTools(

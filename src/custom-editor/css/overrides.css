@@ -134,19 +134,14 @@
 	color: var(--theme--form--field--input--foreground-subdued);
 }
 
-/* Flex block styles */
+/** Flex block styles **/
+
 .codex-editor .ce-flex-block {
 	border: 1px dashed var(--theme--form--field--input--border-color);
 	border-radius: var(--theme--border-radius);
-	padding: 0.75rem;
-	background: var(--theme--background-subdued);
-}
-
-.codex-editor .ce-flex-block__controls {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	margin-bottom: 0.75rem;
+	position: relative;
+	min-height: 2.5rem;
+	/* padding: 0.75rem; */
 }
 
 .codex-editor .ce-flex-block__text-input,
@@ -162,9 +157,16 @@
 	outline: none;
 }
 
+.codex-editor .ce-flex-add-item__button {
+	position: absolute;
+	right: -5px;
+	top: -5px;
+	z-index: 9;
+}
+
 .codex-editor .ce-flex-block__button {
 	padding: 0.5rem 0.8rem;
-	border: 1px solid var(--theme--form--field--input--border-color);
+	border: 1px solid var(--theme--foreground-subdued);
 	background: var(--theme--background-normal);
 	color: var(--theme--form--field--input--foreground);
 	border-radius: var(--theme--border-radius);
@@ -176,6 +178,7 @@
 }
 
 .codex-editor .ce-flex-block__preview {
+	padding: 0.75rem;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.75rem;
@@ -184,9 +187,8 @@
 .codex-editor .ce-flex-block__item {
 	position: relative;
 	padding: 0.55rem 0.75rem;
-	border: 1px solid var(--theme--form--field--input--border-color);
-	border-radius: var(--theme--border-radius);
-	background: var(--theme--background-normal);
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);	
 	color: var(--theme--form--field--input--foreground);
 	min-width: 4rem;
 	display: flex;
@@ -249,9 +251,11 @@
 }
 
 .codex-editor .ce-flex-block__button--primary {
+	/*
 	background: var(--theme--color-primary);
 	color: var(--theme--color-on-primary);
 	border-color: transparent;
+	*/
 }
 
 .codex-editor .ce-flex-block__button--secondary {

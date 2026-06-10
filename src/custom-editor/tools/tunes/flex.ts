@@ -31,6 +31,21 @@ export class Flex implements BlockTune {
 	private block: BlockAPI | undefined;
 	private data: BlockToolConstructorOptions['data'] & FlexTuneData;
 	private wrapper: HTMLElement | undefined;
+	private buttonGroups = new Map<string, HTMLButtonElement[]>();
+
+	private updatePreviewStyle() {
+		const preview = this.wrapper?.querySelector<HTMLElement>('.ce-flex-block__preview');
+		if (!preview) {
+			return;
+		}
+
+		preview.style.display = 'flex';
+		preview.style.flexWrap = 'wrap';
+		preview.style.flexDirection = this.data.direction;
+		preview.style.justifyContent = this.data.justify;
+		preview.style.alignItems = this.data.align;
+		preview.style.gap = '0.75rem';
+	}
 
 	constructor({ api, data, config, block }: BlockToolConstructorOptions) {
 		this.api = api;
@@ -59,16 +74,7 @@ export class Flex implements BlockTune {
 		this.wrapper = document.createElement('div');
 		this.wrapper.classList.add('ce-flex-tune-wrapper');
 		this.wrapper.append(blockContent);
-
-		const preview = this.wrapper.querySelector<HTMLElement>('.ce-flex-block__preview');
-		if (preview) {
-			preview.style.display = 'flex';
-			preview.style.flexWrap = 'wrap';
-			preview.style.flexDirection = this.data.direction;
-			preview.style.justifyContent = this.data.justify;
-			preview.style.alignItems = this.data.align;
-			preview.style.gap = '0.75rem';
-		}
+		this.updatePreviewStyle();
 
 		return this.wrapper;
 	}
@@ -77,22 +83,64 @@ export class Flex implements BlockTune {
 		const wrapper = document.createElement('div');
 		wrapper.classList.add('ce-flex-tune');
 
-		wrapper.append(this.createButtonGroup('Direction', directionOptions, this.data.direction, (value) => {
+		const directionGroup = this.createButtonGroup('Direction', directionOptions, this.data.direction, (value) => {
 			this.data.direction = value as FlexTuneData['direction'];
+			this.updatePreviewStyle();
+			this.refreshButtonGroup('Justify');
+			this.refreshButtonGroup('Align');
 			this.block?.dispatchChange();
-		}));
+		});
 
-		wrapper.append(this.createButtonGroup('Justify', justifyOptions, this.data.justify, (value) => {
+		const justifyGroup = this.createButtonGroup('Justify', justifyOptions, this.data.justify, (value) => {
 			this.data.justify = value as FlexTuneData['justify'];
+			this.updatePreviewStyle();
 			this.block?.dispatchChange();
-		}));
+		});
 
-		wrapper.append(this.createButtonGroup('Align', alignOptions, this.data.align, (value) => {
+		const alignGroup = this.createButtonGroup('Align', alignOptions, this.data.align, (value) => {
 			this.data.align = value as FlexTuneData['align'];
+			this.updatePreviewStyle();
 			this.block?.dispatchChange();
-		}));
+		});
 
+		wrapper.append(directionGroup);
+		wrapper.append(justifyGroup);
+		wrapper.append(alignGroup);
 		return wrapper;
+	}
+
+private getCurrentValue(labelText: string) {
+		switch (labelText) {
+			case 'Direction':
+				return this.data.direction;
+			case 'Justify':
+				return this.data.justify;
+			case 'Align':
+				return this.data.align;
+			default:
+				return '';
+		}
+	}
+
+	private getIconClass(optionIcon: string, currentValue: string) {
+		const same = this.data.direction === currentValue;
+		return `flexicons-${same ? '' : this.data.direction + '-'}${optionIcon}`;
+	}
+
+	private refreshButtonGroup(labelText: string) {
+		const buttons = this.buttonGroups.get(labelText);
+		if (!buttons) return;
+
+		const currentValue = this.getCurrentValue(labelText);
+
+		for (const button of buttons) {
+			const value = button.dataset.value || '';
+			const icon = button.querySelector('i');
+			if (icon) {
+				icon.className = this.getIconClass(button.dataset.icon || '', value);
+			}
+			button.classList.toggle(this.api.styles.settingsButtonActive, value === currentValue);
+		}
 	}
 
 	createButtonGroup(labelText: string, options: { name: string; label: string, icon: string }[], current: string, onChange: (value: string) => void) {
@@ -103,16 +151,19 @@ export class Flex implements BlockTune {
 		label.classList.add('ce-flex-tune__label');
 		label.textContent = labelText;
 		group.appendChild(label);
+
+		const buttons: HTMLButtonElement[] = [];
+
 		for (const option of options) {
 			const button = document.createElement('button');
 			const icon = document.createElement('i');
-			const same = this.data.direction === current;
-			const iconClass = `flexicons-${same ? '' : this.data.direction + '-'}${option.icon}`;			
-			icon.classList.add(iconClass);
+			button.dataset.value = option.name;
+			button.dataset.icon = option.icon;
+			icon.className = this.getIconClass(option.icon, current);
 			button.appendChild(icon);
 			button.title = option.label;
 			button.type = 'button';
-			button.classList.add(this.api.styles.settingsButton);					
+			button.classList.add(this.api.styles.settingsButton);
 			button.classList.toggle(this.api.styles.settingsButtonActive, current === option.name);
 			button.addEventListener('click', () => {
 				this.data = {
@@ -128,8 +179,10 @@ export class Flex implements BlockTune {
 				}
 			});
 			group.appendChild(button);
+			buttons.push(button);
 		}
 
+		this.buttonGroups.set(labelText, buttons);
 		return group;
 	}
 

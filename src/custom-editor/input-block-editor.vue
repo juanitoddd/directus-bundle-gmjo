@@ -4,7 +4,7 @@ import { useApi, useStores } from '@directus/extensions-sdk';
 // CORE-CHANGE end
 import EditorJS from '@editorjs/editorjs';
 import { cloneDeep, isEqual } from 'lodash';
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useBus } from './bus';
@@ -70,18 +70,102 @@ const uploaderComponentElement = ref<HTMLElement>();
 const editorElement = ref<HTMLElement>();
 const haveFilesAccess = Boolean(collectionStore.getCollection('directus_files'));
 const haveValuesChanged = ref(false);
+const flexEditorjsRef = ref<EditorJS>();
+const flexEditorjsIsReady = ref(false);
+const flexEditorElement = ref<HTMLElement>();
+const flexEditorData = ref<EditorJS.OutputData | null>(null);
+const flexEditorOpen = ref(false);
+const flexEditorCallback = ref<((item: any) => void) | null>(null);
 const router = useRouter();
 
 // CORE-CHANGE start
 const api = useApi();
 
 // CORE-CHANGE end
+
+function openFlexItemEditor(params: { data?: EditorJS.OutputData | null; callback: (item: any) => void }) {
+	flexEditorData.value = params.data || null;
+	flexEditorCallback.value = params.callback;
+	flexEditorOpen.value = true;
+}
+
+async function createFlexEditor() {
+	await nextTick();
+	if (!flexEditorElement.value) return;
+
+	if (!flexEditorjsRef.value) {
+		flexEditorjsRef.value = new EditorJS({
+			holder: flexEditorElement.value,
+			readOnly: false,			
+			minHeight: 200,
+			onChange: () => {},
+			tools,
+		});
+
+		await flexEditorjsRef.value.isReady;
+		flexEditorjsIsReady.value = true;
+	}
+
+	if (flexEditorData.value) {
+		await flexEditorjsRef.value.render(flexEditorData.value);
+	} else {
+		flexEditorjsRef.value.clear();
+	}
+}
+
+async function destroyFlexEditor() {
+	if (flexEditorjsRef.value) {
+		await flexEditorjsRef.value.destroy();
+		flexEditorjsRef.value = undefined;
+	}
+	flexEditorjsIsReady.value = false;
+}
+
+function cancelFlexEditor() {
+	flexEditorOpen.value = false;
+	flexEditorCallback.value = null;
+	flexEditorData.value = null;
+}
+
+function onFlexDrawerUpdate(value: boolean) {
+	if (!value) cancelFlexEditor();
+}
+
+async function confirmFlexEditor() {
+	if (!flexEditorjsRef.value || !flexEditorjsIsReady.value) return;
+
+	try {
+		const result = await flexEditorjsRef.value.saver.save();
+		if (flexEditorCallback.value) {
+			flexEditorCallback.value({
+				type: 'rich',
+				content: result,
+			});
+		}
+	}
+	catch (error) {
+		unexpectedError(error);
+	}
+	finally {
+		cancelFlexEditor();
+	}
+}
+
+watch(flexEditorOpen, async (open) => {
+	if (open) {
+		await createFlexEditor();
+	} else {
+		await destroyFlexEditor();
+	}
+});
+
 const tools = getTools(
 	{
 		baseURL: api.defaults.baseURL,
 		setFileHandler,
 		setCurrentPreview,
 		getUploadFieldElement: () => uploaderComponentElement,
+		openFlexEditor: openFlexItemEditor,
 	},
 	props.tools,
 	haveFilesAccess,
@@ -151,8 +235,9 @@ onMounted(async () => {
 	editorjsIsReady.value = true;
 });
 
-onUnmounted(() => {
+onUnmounted(async () => {
 	editorjsRef.value?.destroy();
+	await destroyFlexEditor();
 	bus.reset();
 });
 
@@ -228,9 +313,26 @@ function sanitizeValue(value: any): EditorJS.OutputData | null {
 		<div ref="editorElement" :class="{ [font]: true, disabled, bordered }" />
 
 		<v-drawer
+			v-if="!disabled" :model-value="flexEditorOpen" icon="edit"
+			:title="t('Flex Item')" cancelable
+			@update:model-value="onFlexDrawerUpdate"
+			@cancel="cancelFlexEditor"
+			style="z-index: 2000;"
+		>
+			<div class="flex-editor-drawer-content">
+				<div ref="flexEditorElement" class="flex-editor-holder"></div>
+				<div class="flex-editor-actions">
+					<VButton :icon="true" :rounded="true" @click="cancelFlexEditor" :outlined="true"><VIcon name="cancel" /></VButton>
+					<VButton :icon="true" :rounded="true" @click="confirmFlexEditor"><VIcon name="check" /></VButton>
+				</div>
+			</div>
+		</v-drawer>
+
+		<v-drawer
 			v-if="haveFilesAccess && !disabled" :model-value="fileHandler !== null" icon="image"
 			:title="t('upload_from_device')" cancelable @update:model-value="unsetFileHandler"
 			@cancel="unsetFileHandler"
+			style="z-index: 2100;"
 		>
 			<div class="uploader-drawer-content">
 				<div v-if="currentPreview" class="uploader-preview-image">
@@ -318,5 +420,23 @@ function sanitizeValue(value: any): EditorJS.OutputData | null {
 	max-height: 40vh;
 	margin: 0 auto;
 	object-fit: contain;
+}
+
+.flex-editor-drawer-content {
+	padding: var(--content-padding);
+}
+
+.flex-editor-holder {
+	min-height: 320px;	
+	border-radius: var(--theme--border-radius);	
+	border: 2px solid var(--theme--form--field--input--border-color-focus);
+	padding: 0.75rem;
+}
+
+.flex-editor-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	margin-top: 1rem;
 }
 </style>

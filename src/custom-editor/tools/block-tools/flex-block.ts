@@ -1,12 +1,10 @@
 import type { BlockToolConstructorOptions } from '@editorjs/editorjs';
+import { IconPlus } from '@codexteam/icons';
+import { blocksToHtml } from '../utils/block-utils';
 
 interface FlexBlockItem {
-	id: string;
-	type: 'text' | 'image';
-	text?: string;
-	imageUrl?: string;
-	caption?: string;
-	link?: string;
+	id: string;	
+	content?: any;
 }
 
 interface FlexBlockData {
@@ -20,9 +18,8 @@ function createId() {
 export default class FlexBlock {
 	private data: FlexBlockData;
 	private config: any;
+	private openFlexEditor: ((params: { data?: any; callback: (item: any) => void }) => void) | null = null;
 	private preview: HTMLElement | null = null;
-	private textInput: HTMLInputElement | null = null;
-	private linkInput: HTMLInputElement | null = null;
 	private block: any;
 
 	static get toolbox() {
@@ -34,6 +31,7 @@ export default class FlexBlock {
 
 	constructor({ data, config, block }: BlockToolConstructorOptions) {
 		this.config = config || {};
+		this.openFlexEditor = this.config?.uploader?.openFlexEditor || null;
 		this.block = block;
 		this.data = {
 			items: Array.isArray((data as FlexBlockData)?.items) ? (data as FlexBlockData).items : [],
@@ -42,58 +40,20 @@ export default class FlexBlock {
 
 	render() {
 		const wrapper = document.createElement('div');
-		wrapper.classList.add('ce-flex-block');
+		wrapper.classList.add('ce-flex-block');		
 
-		const controls = document.createElement('div');
-		controls.classList.add('ce-flex-block__controls');
-
-		const textField = document.createElement('div');
-		textField.classList.add('ce-flex-block__field');
-
-		this.textInput = document.createElement('input');
-		this.textInput.type = 'text';
-		this.textInput.placeholder = 'Add flex item text';
-		this.textInput.classList.add('ce-flex-block__text-input');
-		textField.appendChild(this.textInput);
-
-		this.linkInput = document.createElement('input');
-		this.linkInput.type = 'url';
-		this.linkInput.placeholder = 'Optional link (https://...)';
-		this.linkInput.classList.add('ce-flex-block__text-input');
-		textField.appendChild(this.linkInput);
-
-		controls.appendChild(textField);
-
-		const addTextButton = document.createElement('button');
-		addTextButton.type = 'button';
-		addTextButton.textContent = 'Add Text';
-		addTextButton.classList.add('ce-flex-block__button', 'ce-flex-block__button--primary');
-		addTextButton.addEventListener('click', () => {
-			if (!this.textInput) return;
-			const value = this.textInput.value.trim();
-			if (!value) return;
-			const link = this.linkInput?.value.trim() || '';
-			this.data.items.push({ id: createId(), type: 'text', text: value, link });
-			this.textInput.value = '';
-			if (this.linkInput) this.linkInput.value = '';
-			this.renderPreview();
-			this.block?.dispatchChange();
-		});
-		controls.appendChild(addTextButton);
-
-		const addImageButton = document.createElement('button');
-		addImageButton.type = 'button';
-		addImageButton.textContent = 'Add Image';
-		addImageButton.classList.add('ce-flex-block__button', 'ce-flex-block__button--primary');
-		addImageButton.addEventListener('click', () => this.openImageUploader());
-		controls.appendChild(addImageButton);
+		const addItemButton = document.createElement('button');
+		addItemButton.type = 'button';
+		addItemButton.innerHTML = IconPlus;		
+		addItemButton.classList.add('ce-toolbar__plus', 'ce-flex-add-item__button');
+		addItemButton.addEventListener('click', () => this.openRichContentEditor());		
 
 		// Layout controls are now handled by the flex tune, keeping the block UI cleaner.
 
 		this.preview = document.createElement('div');
 		this.preview.classList.add('ce-flex-block__preview');
-
-		wrapper.appendChild(controls);
+		
+		wrapper.appendChild(addItemButton);
 		wrapper.appendChild(this.preview);
 
 		this.renderPreview();
@@ -101,20 +61,30 @@ export default class FlexBlock {
 		return wrapper;
 	}
 
-	openImageUploader() {
-		if (!this.config?.uploader || !this.config.uploader.setFileHandler) {
+	openRichContentEditor(item?: FlexBlockItem, index?: number) {
+		if (!this.openFlexEditor) {
 			return;
 		}
 
-		this.config.uploader.setFileHandler((file: any) => {
-			if (!file || !file.id) {
-				return;
-			}
+		this.openFlexEditor({
+			data: item?.content || null,
+			callback: (result) => {
+				const returned = result && (result.content || result);
 
-			const imageUrl = `${this.config.uploader.baseURL}assets/${file.id}`;
-			this.data.items.push({ id: createId(), type: 'image', imageUrl, caption: '', link: '' });
-			this.renderPreview();
-			this.block?.dispatchChange();
+				if (item && typeof index === 'number') {
+					// Always store/update as rich content					
+					item.content = returned;
+					this.data.items[index] = item;
+				} else {
+					this.data.items.push({
+						id: createId(),						
+						content: returned,
+					});
+				}
+
+				this.renderPreview();
+				this.block?.dispatchChange();
+			},
 		});
 	}
 
@@ -126,6 +96,7 @@ export default class FlexBlock {
 		items.splice(newIndex, 0, moved);
 		this.data.items = items;
 		this.renderPreview();
+		console.log("this.block", this.block);
 		this.block?.dispatchChange();
 	}
 
@@ -133,78 +104,16 @@ export default class FlexBlock {
 		const item = this.data.items[index];
 		if (!item) return;
 
-		const existingPanel = this.preview?.parentElement?.querySelector('.ce-flex-block__editor-panel');
-		if (existingPanel) existingPanel.remove();
-
-		const editPanel = document.createElement('div');
-		editPanel.classList.add('ce-flex-block__editor-panel');
-
-		const title = document.createElement('div');
-		title.classList.add('ce-flex-block__editor-panel-title');
-		title.textContent = item.type === 'text' ? 'Edit text item' : 'Edit image details';
-		editPanel.appendChild(title);
-
-		const field = this.createEditorField(item.type === 'text' ? 'Text content' : 'Image caption', item.type === 'text' ? item.text || '' : item.caption || '');
-		field.input.addEventListener('input', () => {
-			if (item.type === 'text') {
-				item.text = field.input.value;
-			} else {
-				item.caption = field.input.value;
-			}
-		});
-		editPanel.appendChild(field.wrapper);
-
-		const linkField = this.createEditorField('Link', item.link || '');
-		linkField.input.addEventListener('input', () => {
-			item.link = linkField.input.value;
-		});
-		editPanel.appendChild(linkField.wrapper);
-
-		const actions = document.createElement('div');
-		actions.classList.add('ce-flex-block__editor-panel-actions');
-
-		const saveButton = document.createElement('button');
-		saveButton.type = 'button';
-		saveButton.textContent = 'Save';
-		saveButton.classList.add('ce-flex-block__button', 'ce-flex-block__button--primary');
-		saveButton.addEventListener('click', () => {
-			this.renderPreview();
-			this.block?.dispatchChange();
-		});
-		actions.appendChild(saveButton);
-
-		const cancelButton = document.createElement('button');
-		cancelButton.type = 'button';
-		cancelButton.textContent = 'Cancel';
-		cancelButton.classList.add('ce-flex-block__button', 'ce-flex-block__button--secondary');
-		cancelButton.addEventListener('click', () => {
-			editPanel.remove();
-		});
-		actions.appendChild(cancelButton);
-
-		editPanel.appendChild(actions);
-		this.preview?.insertAdjacentElement('afterend', editPanel);
+		// Open the drawer-based editor for any item type. The editor
+		// callback will intelligently merge content back into the item
+		// (preserving simple text/image captions where possible).
+		this.openRichContentEditor(item, index);
 	}
 
-	createEditorField(labelText: string, value: string) {
-		const wrapper = document.createElement('div');
-		wrapper.classList.add('ce-flex-block__field');
 
-		const label = document.createElement('label');
-		label.classList.add('ce-flex-block__field-label');
-		label.textContent = labelText;
-		wrapper.appendChild(label);
-
-		const input = document.createElement('input');
-		input.type = 'text';
-		input.classList.add('ce-flex-block__text-input');
-		input.value = value;
-		wrapper.appendChild(input);
-
-		return { wrapper, input };
-	}
 
 	renderPreview() {
+		console.log("Rendering preview with data:", this.data);
 		const preview = this.preview;
 		if (!preview) return;
 		preview.innerHTML = '';
@@ -219,48 +128,13 @@ export default class FlexBlock {
 
 		this.data.items.forEach((item, index) => {
 			const itemElement = document.createElement('div');
-			itemElement.classList.add('ce-flex-block__item');
-
-			const header = document.createElement('div');
-			header.classList.add('ce-flex-block__item-header');
-			header.textContent = item.type === 'text' ? 'Text block' : 'Image block';
-			itemElement.appendChild(header);
-
-			if (item.type === 'text') {
-				const textNode = document.createElement('div');
-				textNode.classList.add('ce-flex-block__item-text');
-				textNode.textContent = item.text || '';
-				if (item.link) {
-					const anchor = document.createElement('a');
-					anchor.href = item.link;
-					anchor.target = '_blank';
-					anchor.rel = 'noopener noreferrer';
-					anchor.appendChild(textNode);
-					itemElement.appendChild(anchor);
-				} else {
-					itemElement.appendChild(textNode);
-				}
-			} else if (item.type === 'image' && item.imageUrl) {
-				const img = document.createElement('img');
-				img.src = item.imageUrl;
-				img.classList.add('ce-flex-block__item-image');
-
-				const captionNode = document.createElement('div');
-				captionNode.classList.add('ce-flex-block__item-caption');
-				captionNode.textContent = item.caption || 'No caption';
-
-				if (item.link) {
-					const anchor = document.createElement('a');
-					anchor.href = item.link;
-					anchor.target = '_blank';
-					anchor.rel = 'noopener noreferrer';
-					anchor.appendChild(img);
-					itemElement.appendChild(anchor);
-				} else {
-					itemElement.appendChild(img);
-				}
-				itemElement.appendChild(captionNode);
-			}
+			itemElement.classList.add('ce-flex-block__item');			
+			
+			const richPreview = document.createElement('div');
+			richPreview.classList.add('ce-flex-block__item-rich-preview');
+			const html = blocksToHtml(item.content?.blocks || []);
+			richPreview.innerHTML = html || '<em>Rich content</em>';
+			itemElement.appendChild(richPreview);
 
 			const controls = document.createElement('div');
 			controls.classList.add('ce-flex-block__item-controls');

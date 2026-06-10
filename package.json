@@ -51,6 +51,7 @@
     "@editorjs/raw": "2.5.0",
     "@editorjs/table": "2.3.0",
     "@editorjs/underline": "1.1.0",
+    "@types/dompurify": "^3.0.5",
     "@types/lodash": "^4.17.24",
     "editorjs-toggle-block": "^0.3.16",
     "sass": "^1.99.0",
@@ -60,6 +61,7 @@
     "vue-router": "^4.4.3"
   },
   "dependencies": {
+    "dompurify": "^3.4.9",
     "editorjs-color-picker": "^1.0.8"
   }
 }
