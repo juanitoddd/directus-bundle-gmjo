@@ -190,6 +190,18 @@ export class ImageTool extends BaseImageTool {
         }
     }
 
+    render() {
+        const wrapper = super.render();
+
+        // The base tool only paints the raw image; our custom tune metadata
+        // (maxWidth/maxHeight/link) saved on data.file is never re-applied on
+        // load. Re-apply it once editor.js has mounted the block content into
+        // block.holder (which happens after render() returns).
+        requestAnimationFrame(() => this.applyImageSettings());
+
+        return wrapper;
+    }
+
     renderSettings() {
         const tunes: Tune[] = [
             {

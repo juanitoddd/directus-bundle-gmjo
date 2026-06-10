@@ -65,10 +65,30 @@ export function blocksToHtml(blocks: any[] | undefined): string {
             }
 
             case 'image': {
-                const url = data && (data.file?.url || data.url || data.file?.storage || data.file?.filename || data.source || '');
+                const file = data.file || {};
+                const url = data && (file.url || data.url || file.storage || file.filename || data.source || '');
                 const caption = escapeHtml(data.caption || data.alt || '');
-                if (url) parts.push(`<img src="${escapeHtml(url)}" alt="${caption}" />`);
-                else if (data.file && data.file.id) parts.push(`<div>Image: ${escapeHtml(String(data.file.id))}</div>`);
+
+                if (url) {
+                    // Mirror the custom image tunes (see plugins.ts ImageTool):
+                    // max-width / max-height as inline styles, optional link wrapper.
+                    const styleRules: string[] = [];
+                    if (file.maxWidth) styleRules.push(`max-width: ${escapeHtml(String(file.maxWidth))}`);
+                    if (file.maxHeight) styleRules.push(`max-height: ${escapeHtml(String(file.maxHeight))}`);
+                    const styleAttr = styleRules.length ? ` style="${styleRules.join('; ')}"` : '';
+
+                    const img = `<img src="${escapeHtml(url)}" alt="${caption}"${styleAttr} />`;
+
+                    const link = typeof file.link === 'string' ? file.link.trim() : '';
+                    if (link) {
+                        parts.push(`<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${img}</a>`);
+                    } else {
+                        parts.push(img);
+                    }
+                }
+                else if (file.id) {
+                    parts.push(`<div>Image: ${escapeHtml(String(file.id))}</div>`);
+                }
                 break;
             }
 
