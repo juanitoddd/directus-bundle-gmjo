@@ -20,6 +20,7 @@ import HTMLBlock from './html-block';
 import FlexBlock from './flex-block';
 import ColorPicker from 'editorjs-color-picker';
 import WeightPicker from './weights';
+import FontFamilyPicker from './fontfamily';
 // EXAMPLE (Part 3/4): add marker tool
 // import Marker from "@editorjs/marker";
 
@@ -128,6 +129,10 @@ export default function getTools(
         },
         WeightPicker: {
             class: WeightPicker,
+            inlineToolbar: true,
+        },        
+        FontFamilyPicker: {
+            class: FontFamilyPicker,
             inlineToolbar: true,
         },
         flexblock: {

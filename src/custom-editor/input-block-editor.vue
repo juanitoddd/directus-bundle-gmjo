@@ -39,6 +39,7 @@ const props = withDefaults(
 			'underline',
 			'ColorPicker',
 			'WeightPicker',
+			'FontFamilyPicker',
 			'htmlblock',
 			'flexblock',
 		],
