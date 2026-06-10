@@ -49,6 +49,20 @@
 	line-height: normal !important;
 }
 
+/** Flex tunes **/
+
+.ce-flex-tune__group {
+	padding: 0.5rem 0;
+	border-bottom: 1px solid var(--theme--form--field--input--border-color);
+}
+
+.ce-flex-tune__group .cdx-settings-button {
+	padding: 0.25rem;
+	border-radius: var(--theme--border-radius);
+	border: 1px solid var(--theme--foreground-subdued);
+	margin-right: 0.25rem;
+}
+
 /** WeightPicker tool styles */
 
 .editorjs__weight-selector-container {

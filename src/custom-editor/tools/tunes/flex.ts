@@ -7,23 +7,23 @@ interface FlexTuneData {
 }
 
 const directionOptions = [
-	{ name: 'row', label: 'Row' },
-	{ name: 'column', label: 'Column' },
+	{ name: 'row', label: 'Row', icon: 'flex-direction-row' },
+	{ name: 'column', label: 'Column', icon: 'flex-direction-column' },
 ];
 
 const justifyOptions = [
-	{ name: 'flex-start', label: 'Start' },
-	{ name: 'center', label: 'Center' },
-	{ name: 'flex-end', label: 'End' },
-	{ name: 'space-between', label: 'Space Between' },
-	{ name: 'space-around', label: 'Space Around' },
+	{ name: 'flex-start', label: 'Start', icon: 'justify-content-flex-start' },
+	{ name: 'center', label: 'Center', icon: 'justify-content-center' },
+	{ name: 'flex-end', label: 'End', icon: 'justify-content-flex-end' },
+	{ name: 'space-between', label: 'Space Between', icon: 'justify-content-space-between' },
+	{ name: 'space-around', label: 'Space Around', icon: 'justify-content-space-around' },
 ];
 
 const alignOptions = [
-	{ name: 'stretch', label: 'Stretch' },
-	{ name: 'flex-start', label: 'Top' },
-	{ name: 'center', label: 'Center' },
-	{ name: 'flex-end', label: 'Bottom' },
+	{ name: 'stretch', label: 'Stretch', icon: 'align-items-stretch' },
+	{ name: 'flex-start', label: 'Top', icon: 'align-items-flex-start' },
+	{ name: 'center', label: 'Center', icon: 'align-items-center' },
+	{ name: 'flex-end', label: 'Bottom', icon: 'align-items-flex-end' },
 ];
 
 export class Flex implements BlockTune {
@@ -95,7 +95,7 @@ export class Flex implements BlockTune {
 		return wrapper;
 	}
 
-	createButtonGroup(labelText: string, options: { name: string; label: string }[], current: string, onChange: (value: string) => void) {
+	createButtonGroup(labelText: string, options: { name: string; label: string, icon: string }[], current: string, onChange: (value: string) => void) {
 		const group = document.createElement('div');
 		group.classList.add('ce-flex-tune__group');
 
@@ -103,12 +103,16 @@ export class Flex implements BlockTune {
 		label.classList.add('ce-flex-tune__label');
 		label.textContent = labelText;
 		group.appendChild(label);
-
 		for (const option of options) {
 			const button = document.createElement('button');
+			const icon = document.createElement('i');
+			const same = this.data.direction === current;
+			const iconClass = `flexicons-${same ? '' : this.data.direction + '-'}${option.icon}`;			
+			icon.classList.add(iconClass);
+			button.appendChild(icon);
+			button.title = option.label;
 			button.type = 'button';
-			button.classList.add(this.api.styles.settingsButton);
-			button.textContent = option.label;
+			button.classList.add(this.api.styles.settingsButton);					
 			button.classList.toggle(this.api.styles.settingsButtonActive, current === option.name);
 			button.addEventListener('click', () => {
 				this.data = {

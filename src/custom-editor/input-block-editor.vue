@@ -247,6 +247,7 @@ function sanitizeValue(value: any): EditorJS.OutputData | null {
 
 <style lang="scss">
 	@import './css/fonts.css';
+	@import './css/icons.css';
   @import './css/overrides.css';
 </style>
 
