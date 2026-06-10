@@ -95,6 +95,30 @@ bus.on(async (event) => {
 
 onMounted(async () => {
 
+	// Load custom fonts via FontFace API so they are available to Editor.js
+	const loadCustomFonts = async () => {
+		const fonts = [
+			{ name: 'GTEestiProText', file: './assets/fonts/GTEestiProText-Regular.ttf' },
+			{ name: 'GTEestiProText Bold', file: './assets/fonts/GTEestiProText-Bold.ttf' },
+		];
+
+		await Promise.all(
+			fonts.map(async (f) => {
+				try {
+					const url = new URL(f.file, import.meta.url).href;
+					const ff = new FontFace(f.name, `url(${url})`);
+					await ff.load();
+					(document as any).fonts.add(ff);
+				}
+				catch (e) {
+					console.warn('Failed to load font', f.name, e);
+				}
+			}),
+		);
+	};
+
+	await loadCustomFonts();
+
 	console.log("Editor props tools", tools)
 
 	editorjsRef.value = new EditorJS({
@@ -222,7 +246,8 @@ function sanitizeValue(value: any): EditorJS.OutputData | null {
 </template>
 
 <style lang="scss">
-    @import './overrides.css';
+	@import './css/fonts.css';
+  @import './css/overrides.css';
 </style>
 
 <style lang="scss" scoped>

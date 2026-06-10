@@ -16,6 +16,11 @@
 	width: max-content;
 }
 
+.codex-editor .ce-popover__items {
+	overflow-y: hidden;
+	gap: 2px;
+}
+
 .codex-editor .ce-align-buttons {
 	display: flex;
 	gap: 0.5rem;
@@ -65,6 +70,21 @@
 
 .editorjs__weight-selector__container-item:hover {
 	transform: scale(1.1);
+}
+
+/** FontFamilyPicker tool styles */
+
+.editorjs__family-selector-container {
+
+}
+
+.editorjs__family-selector__container-item {
+	cursor: pointer;
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--theme--form--field--input--border-color);	
+}
+.editorjs__family-selector__container-item:last-child {	
+	border-bottom: none;
 }
 
 /* HTML block display */
@@ -121,7 +141,11 @@
 	border: 1px solid var(--theme--form--field--input--border-color);
 	border-radius: var(--theme--border-radius);
 	background: var(--theme--form--field--input--background);
-	color: var(--theme--form--field--input--foreground);
+	color: var(--theme--form--field--input--foreground);	
+}
+
+.codex-editor .ce-flex-block__select:focus {
+	outline: none;
 }
 
 .codex-editor .ce-flex-block__button {

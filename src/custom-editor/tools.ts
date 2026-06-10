@@ -11,16 +11,15 @@ import RawToolTool from '@editorjs/raw';
 import TableTool from '@editorjs/table';
 import UnderlineTool from '@editorjs/underline';
 import ToggleBlock from 'editorjs-toggle-block';
-import { Alignment } from './alignment';
+import { Alignment } from './tools/tunes/alignment';
 import { AttachesTool, ImageTool } from './plugins';
-import { BlockFormat } from './block-format';
-import { FontWeightBlock, FontWeightInline } from './font-weight';
-import { ClassWrapBlock, ClassWrapInline } from './class-wrap';
-import HTMLBlock from './html-block';
-import FlexBlock from './flex-block';
+import { BlockFormat } from './tools/tunes/block-format';
+import { ClassWrapBlock, ClassWrapInline } from './tools/inline-tools/class-wrap';
+import HTMLBlock from './tools/block-tools/html-block';
+import FlexBlock from './tools/block-tools/flex-block';
 import ColorPicker from 'editorjs-color-picker';
-import WeightPicker from './weights';
-import FontFamilyPicker from './fontfamily';
+import WeightPicker from './tools/inline-tools/weights_or';
+import FontFamilyPicker from './tools/inline-tools/fontfamily';
 // EXAMPLE (Part 3/4): add marker tool
 // import Marker from "@editorjs/marker";
 
@@ -39,7 +38,7 @@ export default function getTools(
     const tools: Record<string, any> = {};
     const fileRequiresTools = new Set(['attaches', 'image']);
 
-    const inlineTools = ['link', 'ColorPicker', 'WeightPicker', 'underline', 'italic'];
+    const inlineTools = ['link', 'ColorPicker', 'WeightPicker', 'FontFamilyPicker', 'underline', 'italic'];
 
     const defaults: Record<string, any> = {
         header: {
@@ -126,6 +125,24 @@ export default function getTools(
         ColorPicker: {
             class: ColorPicker,
             inlineToolbar: true,
+            config: {
+                colors: [
+                    '#2e3c74',
+                    '#0055cc',
+                    '#1f6a83',
+                    '#206e4e',
+                    '#e56910',
+                    '#ae2e24',
+                    '#5e4db2',
+                    '#758195',
+                    '#1e7afd',
+                    '#2998bd',
+                    '#23a06b',
+                    '#fea363',
+                    '#c9372c',
+                    '#8270db',
+                ]
+            }
         },
         WeightPicker: {
             class: WeightPicker,
@@ -185,8 +202,7 @@ export default function getTools(
 
     // Add our custom block tunes to paragraph/header/quote if they're present
     const customTunes = [] as string[];
-    if ('classWrapBlock' in tools) customTunes.push('classWrapBlock');
-    if ('fontWeightBlock' in tools) customTunes.push('fontWeightBlock');
+    if ('classWrapBlock' in tools) customTunes.push('classWrapBlock');    
 
     if (customTunes.length > 0) {
         if ('paragraph' in tools) {
