@@ -18,7 +18,7 @@ import { ClassWrapBlock, ClassWrapInline } from './tools/inline-tools/class-wrap
 import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
 import ColorPicker from 'editorjs-color-picker';
-import WeightPicker from './tools/inline-tools/weights_or';
+import WeightPicker from './tools/inline-tools/weights';
 import FontFamilyPicker from './tools/inline-tools/fontfamily';
 // EXAMPLE (Part 3/4): add marker tool
 // import Marker from "@editorjs/marker";
