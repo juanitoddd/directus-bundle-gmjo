@@ -168,23 +168,24 @@ export class AttachesTool extends BaseAttachesTool {
 
 export class ImageTool extends BaseImageTool {
     constructor(params: any) {
-        super(params);
-
+        super(params);        
         this.uploader = new Uploader({
             config: this.config,
             getCurrentFile: () => this.data?.file?.url,
             onUpload: (response: any) => this.onUpload(response),
             onError: (error: any) => this.uploadingFailed(error),
-        });
+        });        
     }
 
-    // eslint-disable-next-line accessor-pairs
+    // eslint-disable-next-line accessor-sets
     set image(file: { url?: any }) {
+        console.log("Setting image with file", file);
         this._data.file = file || {};
 
         if (file && file.url) {
             const separator = file.url.includes('?') ? '&' : '?';
             const imageUrl = `${file.url}${separator}key=system-large-contain`;
+            console.log("imageUrl", imageUrl);
             this.ui.fillImage(imageUrl);
         }
     }
@@ -200,12 +201,60 @@ export class ImageTool extends BaseImageTool {
 
                     bus.emit({
                         type: 'open-url',
-                        payload: this.data.file.fileURL,
+                        payload: (this as any).data.file.fileURL,
                     });
                 },
             },
             ...ImageTool.tunes,
         ];
+
+        // Add custom max-width and max-height settings
+        const maxWidthTune: Tune = {
+            title: 'Max Width',
+            icon: '↔',
+            toggle: false,
+            onActivate: () => {
+                const currentFile = (this as any).data.file || {};
+                const input = prompt('Enter max-width (e.g., 500px, 100%, auto):', currentFile.maxWidth || '');
+                if (input !== null) {
+                    currentFile.maxWidth = input.trim();
+                    (this as any).data.file = currentFile;
+                    this.applyImageSettings();
+                }
+            },
+        };
+
+        const maxHeightTune: Tune = {
+            title: 'Max Height',
+            icon: '↕',
+            toggle: false,
+            onActivate: () => {
+                const currentFile = (this as any).data.file || {};
+                const input = prompt('Enter max-height (e.g., 400px, 100%, auto):', currentFile.maxHeight || '');
+                if (input !== null) {
+                    currentFile.maxHeight = input.trim();
+                    (this as any).data.file = currentFile;
+                    this.applyImageSettings();
+                }
+            },
+        };
+
+        const linkTune: Tune = {
+            title: 'Link Image',
+            icon: '🔗',
+            toggle: false,
+            onActivate: () => {
+                const currentFile = (this as any).data.file || {};
+                const input = prompt('Enter link URL for this image:', currentFile.link || '');
+                if (input !== null) {
+                    currentFile.link = input.trim();
+                    (this as any).data.file = currentFile;
+                    this.applyImageSettings();
+                }
+            },
+        };
+
+        tunes.push(maxWidthTune, maxHeightTune, linkTune);
 
         const wrapperElement = document.createElement('div');
         wrapperElement.classList.add('ce-popover__items');
@@ -231,7 +280,7 @@ export class ImageTool extends BaseImageTool {
             }
             else if (tune.toggle) {
                 tuneElement.addEventListener('click', () => {
-                    this.tuneToggled(tune.name);
+                    (this as any).tuneToggled(tune.name);
                     tuneElement.classList.toggle('ce-popover-item--active');
                 });
             }
@@ -240,5 +289,49 @@ export class ImageTool extends BaseImageTool {
         }
 
         return wrapperElement;
+    }
+
+    private applyImageSettings() {
+        // Find the img element in the block and apply the max-width/max-height styles and optional link wrapper
+        const blockHolder = (this as any).block?.holder as HTMLElement | null;
+        console.log("blockHolder", blockHolder);
+        if (!blockHolder) return;
+
+        const imgElement = blockHolder.querySelector('img') as HTMLElement | null;
+        console.log("imgElement", imgElement);
+        if (!imgElement) return;
+
+        const fileData = (this as any).data.file || {};
+
+        if (fileData.maxWidth) {
+            imgElement.style.maxWidth = fileData.maxWidth;
+        } else {
+            imgElement.style.maxWidth = '';
+        }
+
+        if (fileData.maxHeight) {
+            imgElement.style.maxHeight = fileData.maxHeight;
+        } else {
+            imgElement.style.maxHeight = '';
+        }
+
+        const linkUrl = fileData.link?.trim();
+        const currentLink = imgElement.closest('a') as HTMLAnchorElement | null;
+
+        if (linkUrl) {
+            if (currentLink) {
+                currentLink.href = linkUrl;
+            } else {
+                const anchor = document.createElement('a');
+                anchor.href = linkUrl;
+                anchor.target = '_blank';
+                anchor.rel = 'noopener noreferrer';
+                imgElement.parentNode?.insertBefore(anchor, imgElement);
+                anchor.appendChild(imgElement);
+            }
+        } else if (currentLink) {
+            currentLink.parentNode?.insertBefore(imgElement, currentLink);
+            currentLink.remove();
+        }
     }
 }

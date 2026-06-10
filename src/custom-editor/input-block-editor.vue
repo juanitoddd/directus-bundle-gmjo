@@ -439,4 +439,39 @@ function sanitizeValue(value: any): EditorJS.OutputData | null {
 	gap: 0.75rem;
 	margin-top: 1rem;
 }
+
+/* Image Size Tune Styles */
+.ce-image-size-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 0.75rem 0;
+}
+
+.ce-image-size-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.ce-image-size-label {
+	font-size: 0.85rem;
+	font-weight: 500;
+	color: var(--theme--form--field--input--foreground);
+}
+
+.ce-image-size-input {
+	padding: 0.5rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--form--field--input--background);
+	color: var(--theme--form--field--input--foreground);
+	font-size: 0.85rem;
+}
+
+.ce-image-size-input:focus {
+	outline: none;
+	border-color: var(--theme--form--field--input--border-color-focus);
+	box-shadow: 0 0 0 2px var(--theme--primary-color, #0d6efd);
+}
 </style>

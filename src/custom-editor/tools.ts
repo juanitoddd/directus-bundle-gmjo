@@ -13,8 +13,6 @@ import UnderlineTool from '@editorjs/underline';
 import ToggleBlock from 'editorjs-toggle-block';
 import { Alignment } from './tools/tunes/alignment';
 import { AttachesTool, ImageTool } from './plugins';
-import { BlockFormat } from './tools/tunes/block-format';
-import { ClassWrapBlock, ClassWrapInline } from './tools/inline-tools/class-wrap';
 import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
 import { Flex } from './tools/tunes/flex';
