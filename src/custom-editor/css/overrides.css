@@ -21,9 +21,10 @@
 	gap: 2px;
 }
 
-/* Remove the separators editor.js injects between popover groups.
-   Unprefixed so it also catches popovers portaled to <body>. */
-.ce-popover-item-separator {
+/* Remove the separators editor.js injects between popover groups, but only in
+   nested popovers (e.g. the font/weight/size submenus). Unprefixed so it also
+   catches popovers portaled to <body>. */
+.ce-popover--nested .ce-popover-item-separator {
 	display: none;
 }
 
