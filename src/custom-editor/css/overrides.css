@@ -30,22 +30,16 @@
 
 /** Elements **/
 
-.codex-editor .ce-block h1, h2, h3, h4, h5, h6 {
-	margin: 0;
-	padding: 0;
+.codex-editor .ce-block h1, h2, h3, h4, h5, h6 {	
 	line-height: normal;
 }
 
-.codex-editor .ce-header, .cdx-nested-list {
-	margin: 0 !important;
-	padding: 0 !important;
+.codex-editor .ce-header, .cdx-nested-list {	
 	line-height: normal !important;
 }
 
-.codex-editor .ce-block {
-	/* margin: 0 !important;*/
-	margin: 1rem 0 !important;
-	padding: 0 !important;
+.codex-editor .ce-block {	
+	margin-block: auto !important;
 	line-height: normal !important;
 }
 
@@ -136,12 +130,12 @@
 
 /** Flex block styles **/
 
-.codex-editor .ce-flex-block {
+.codex-editor .ce-flex-block,
+.codex-editor .ce-grid-block {
 	border: 1px dashed var(--theme--form--field--input--border-color);
 	border-radius: var(--theme--border-radius);
 	position: relative;
-	min-height: 2.5rem;
-	/* padding: 0.75rem; */
+	min-height: 2.5rem;	
 }
 
 .codex-editor .ce-flex-block__text-input,

@@ -162,19 +162,21 @@ export default function getTools(
             config: {
                 uploader: uploaderConfig,
             },
-            tunes: ['flex'],
+            tunes: ['flex', 'spacing'],
         },
         gridblock: {
             class: GridBlock,
             config: {
                 uploader: uploaderConfig,
             },
+            tunes: ['spacing'],
         },
         flex: {
             class: Flex,
         },
         htmlblock: {
             class: HTMLBlock,
+            tunes: ['spacing'],
         },
         // EXAMPLE (Part 4/4): add marker tool
         //     class: Marker,

@@ -56,6 +56,11 @@ export class Spacing implements BlockTune {
 	wrap(blockContent: HTMLElement) {
 		this.wrapper = document.createElement('div');
 		this.wrapper.classList.add('ce-spacing-tune-wrapper');
+		// Make the wrapper a true block-level, full-width box so that its
+		// vertical margins behave like real block margins (and can collapse
+		// through to separate this block from its neighbours).
+		this.wrapper.style.display = 'block';
+		this.wrapper.style.width = '100%';
 		this.wrapper.append(blockContent);
 		this.applySpacing();
 		return this.wrapper;
