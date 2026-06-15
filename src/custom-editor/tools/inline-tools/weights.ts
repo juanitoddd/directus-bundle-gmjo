@@ -1,5 +1,6 @@
 import { API } from '@editorjs/editorjs';
 import { IconBold, IconColor } from '@codexteam/icons';
+import { applyStyledSpan } from './inline-utils';
 
 type WeightPickerConfig = {
 	weights: Record<number, string>;
@@ -59,17 +60,12 @@ export default class WeightPicker implements EditorJS.InlineTool {
 		}
 
 		if (!this.select) {
-			console.log("Rendering WeightPicker:");
-
 			this.select = document.createElement('select');
 			this.select.classList.add('ce-flex-block__select');
 			Object.entries(this.weights).forEach(([value, weight]) => {
 				const option = document.createElement('option');
 				option.value = value;
 				option.textContent = weight;
-				if (this.currentWeight === value) {
-					option.selected = true;
-				}
 				if(this.select) this.select.appendChild(option);
 			});
 			this.select.addEventListener('change', () => {
@@ -78,9 +74,13 @@ export default class WeightPicker implements EditorJS.InlineTool {
 					this.currentWeight = value;
 					this.wrapAndWeight(this.lastRange, value);
 					this.select!.value = value;
-					console.log("Selected font weight:", value);
 				}
 			});
+		}
+
+		// Reflect the current selection's weight on every render.
+		if (this.currentWeight) {
+			this.select.value = this.currentWeight;
 		}
 
 		return this.select;
@@ -136,18 +136,7 @@ export default class WeightPicker implements EditorJS.InlineTool {
 	}
 
 	wrapAndWeight(range: Range | null, weight: string) {
-		if (!range) {
-			return;
-		}
-		const selectedText = range.extractContents();
-		const span = document.createElement(this.tag);
-		span.classList.add(this.class);
-		span.appendChild(selectedText);
-		span.style.fontWeight = weight;
-		span.innerHTML = span.textContent || '';
-		range.insertNode(span);
-
-		this.api.selection.expandToTag(span);
+		applyStyledSpan(range, weight, { className: this.class, styleProperty: 'fontWeight' }, this.api);
 	}
 
 	/**

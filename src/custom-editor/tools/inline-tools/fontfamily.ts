@@ -1,4 +1,5 @@
-import { API } from '@editorjs/editorjs';	
+import { API } from '@editorjs/editorjs';
+import { applyStyledSpan } from './inline-utils';
 
 type FontFamilyPickerConfig = {
 	families: string[];
@@ -105,19 +106,7 @@ export default class FontFamilyPicker implements EditorJS.InlineTool {
 	}
 
 	wrapAndFamily(range: Range | null, family: string) {
-		if (!range) {
-			return;
-		}		
-		const selectedText = range.extractContents();
-		const span = document.createElement(this.tag);		
-		span.classList.add(this.class);
-		// span.classList.add(`font-${this.familiesClassMap[family]}`);
-		span.appendChild(selectedText);
-		span.style.fontFamily = family;
-		span.innerHTML = span.textContent || '';		
-		range.insertNode(span);
-
-		this.api.selection.expandToTag(span);
+		applyStyledSpan(range, family, { className: this.class, styleProperty: 'fontFamily' }, this.api);
 	}
 
 	getSelectionFamily(): string | null {
