@@ -21,6 +21,12 @@
 	gap: 2px;
 }
 
+/* Remove the separators editor.js injects between popover groups.
+   Unprefixed so it also catches popovers portaled to <body>. */
+.ce-popover-item-separator {
+	display: none;
+}
+
 .codex-editor .ce-align-buttons {
 	display: flex;
 	gap: 0.5rem;

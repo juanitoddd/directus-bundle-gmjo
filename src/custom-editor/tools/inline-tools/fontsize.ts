@@ -1,5 +1,8 @@
 import { API } from '@editorjs/editorjs';
-import { applyStyledSpan } from './inline-utils';
+import type { MenuConfig } from '@editorjs/editorjs/types/tools/menu-config';
+import { applyStyledSpan, buildInlineMenu, captureSelectionRange } from './inline-utils';
+
+const FONT_SIZE_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h11v2"/><path d="M9.5 5v14"/><path d="M7 19h5"/><path d="M16 13v-1h6v1"/><path d="M19 12v7"/><path d="M17.5 19h3"/></svg>';
 
 type FontSizePickerConfig = {
 	sizes: string[];
@@ -31,9 +34,6 @@ export default class FontSizePicker implements EditorJS.InlineTool {
 		'48px',
 	];
 
-	select: HTMLSelectElement | null = null;
-	currentSize: string = '';
-
 	static get title() {
 		return 'Font Size';
 	}
@@ -51,44 +51,23 @@ export default class FontSizePicker implements EditorJS.InlineTool {
 		}
 	}
 
-	render() {
-		const activeSize = this.getSelectionSize();
-		this.currentSize = activeSize ?? '';
+	render(): MenuConfig {
+		this.lastRange = captureSelectionRange();
+		const current = this.getSelectionSize() ?? '';
 
-		if (!this.select) {
-			this.select = document.createElement('select');
-			this.select.classList.add('ce-flex-block__select');
-
-			const defaultOption = document.createElement('option');
-			defaultOption.value = '';
-			defaultOption.textContent = 'Default';
-			this.select.appendChild(defaultOption);
-
-			this.sizes.forEach((size) => {
-				const option = document.createElement('option');
-				option.value = size;
-				option.textContent = size;
-				this.select!.appendChild(option);
-			});
-
-			this.select.addEventListener('change', () => {
-				// An empty value (the "Default" option) clears the size: the
-				// helper writes an empty style which cleanupSpans then unwraps.
-				const value = this.select?.value ?? '';
-				this.currentSize = value;
-				this.wrapAndSize(this.lastRange, value);
-				this.select!.value = value;
-			});
-		}
-
-		// Reflect the current selection's size on every render.
-		this.select.value = this.currentSize;
-
-		return this.select;
-	}
-
-	surround(range: Range | null) {
-		this.lastRange = range;
+		return buildInlineMenu({
+			icon: FONT_SIZE_ICON,
+			// title: current || 'Font Size',
+			title: '',
+			currentValue: current,
+			options: [
+				{ value: '', label: 'Default' },
+				...this.sizes.map((size) => ({ value: size, label: size })),
+			],
+			// An empty value (the "Default" option) clears the size: the helper
+			// writes an empty style which cleanupSpans then unwraps.
+			onSelect: (value) => this.wrapAndSize(this.lastRange, value),
+		});
 	}
 
 	wrapAndSize(range: Range | null, size: string) {

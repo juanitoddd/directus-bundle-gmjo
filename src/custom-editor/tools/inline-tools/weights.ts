@@ -1,6 +1,7 @@
 import { API } from '@editorjs/editorjs';
-import { IconBold, IconColor } from '@codexteam/icons';
-import { applyStyledSpan } from './inline-utils';
+import { IconBold } from '@codexteam/icons';
+import type { MenuConfig } from '@editorjs/editorjs/types/tools/menu-config';
+import { applyStyledSpan, buildInlineMenu, captureSelectionRange } from './inline-utils';
 
 type WeightPickerConfig = {
 	weights: Record<number, string>;
@@ -33,9 +34,6 @@ export default class WeightPicker implements EditorJS.InlineTool {
 		100: 'Thin'
 	};	
 
-	select: HTMLSelectElement | null = null;
-	currentWeight: string | null = null;
-
 	static get title() {
 		return 'Weights';
 	}
@@ -50,40 +48,21 @@ export default class WeightPicker implements EditorJS.InlineTool {
 
 		if (config.weights) {
 			this.weights = config.weights;
-		}		
+		}
 	}
 
-	render() {
-		const activeWeight = this.getSelectionWeight();
-		if (activeWeight) {
-			this.currentWeight = activeWeight;
-		}
+	render(): MenuConfig {
+		this.lastRange = captureSelectionRange();
+		const current = this.getSelectionWeight() ?? '';
 
-		if (!this.select) {
-			this.select = document.createElement('select');
-			this.select.classList.add('ce-flex-block__select');
-			Object.entries(this.weights).forEach(([value, weight]) => {
-				const option = document.createElement('option');
-				option.value = value;
-				option.textContent = weight;
-				if(this.select) this.select.appendChild(option);
-			});
-			this.select.addEventListener('change', () => {
-				const value = this.select?.value;
-				if (value) {
-					this.currentWeight = value;
-					this.wrapAndWeight(this.lastRange, value);
-					this.select!.value = value;
-				}
-			});
-		}
-
-		// Reflect the current selection's weight on every render.
-		if (this.currentWeight) {
-			this.select.value = this.currentWeight;
-		}
-
-		return this.select;
+		return buildInlineMenu({
+			icon: IconBold,
+			// title: current ? (this.weights[Number(current)] || current) : 'Weight',
+			title: '',
+			currentValue: current,
+			options: Object.entries(this.weights).map(([value, label]) => ({ value, label })),
+			onSelect: (value) => this.wrapAndWeight(this.lastRange, value),
+		});
 	}
 
 	getSelectionWeight(): string | null {

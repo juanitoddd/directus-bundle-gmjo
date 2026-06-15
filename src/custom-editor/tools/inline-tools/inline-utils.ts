@@ -1,6 +1,51 @@
 import type { API } from '@editorjs/editorjs';
+import type { MenuConfig } from '@editorjs/editorjs/types/tools/menu-config';
 
 type StyleProperty = 'fontFamily' | 'fontWeight' | 'fontSize';
+
+export interface InlineMenuOption {
+	value: string;
+	label: string;
+}
+
+/**
+ * Capture the current selection range so it can be applied later from a
+ * popover item's onActivate handler (render runs while the selection is live).
+ */
+export function captureSelectionRange(): Range | null {
+	const selection = window.getSelection();
+	if (!selection || selection.rangeCount === 0) {
+		return null;
+	}
+	return selection.getRangeAt(0).cloneRange();
+}
+
+/**
+ * Build a declarative inline-toolbar item that renders a compact button whose
+ * options open in a nested popover (instead of a wide <select>). The active
+ * option is highlighted, and the button title shows the current value.
+ */
+export function buildInlineMenu(config: {
+	icon: string;
+	title: string;
+	currentValue: string;
+	options: InlineMenuOption[];
+	onSelect: (value: string) => void;
+}): MenuConfig {
+	return {
+		icon: config.icon,
+		title: config.title,
+		children: {
+			searchable: false,
+			items: config.options.map((option) => ({
+				title: option.label,
+				isActive: config.currentValue === option.value,
+				closeOnActivate: true,
+				onActivate: () => config.onSelect(option.value),
+			})),
+		},
+	} as MenuConfig;
+}
 
 interface StyledSpanConfig {
 	className: string;
