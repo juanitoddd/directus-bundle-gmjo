@@ -195,6 +195,11 @@
 	display: -webkit-flex;
 	flex-direction: column;
 	gap: 0.5rem;
+	flex: 0 0 auto;
+}
+
+.codex-editor .ce-flex-block__item--grow {
+	flex: 1 1 0;
 }
 
 .codex-editor .ce-flex-block__item-text {
@@ -218,7 +223,8 @@
 	flex-wrap: wrap;
 }
 
-.codex-editor .ce-flex-block__item-control {
+.codex-editor .ce-flex-block__item-control,
+.codex-editor .ce-grid-block__item-control {
 	padding: 0.2rem 0.5rem;
 	border: 1px solid var(--theme--form--field--input--border-color);
 	background: var(--theme--background-normal);
@@ -228,8 +234,69 @@
 	font-size: 0.85rem;
 }
 
-.codex-editor .ce-flex-block__item-control:hover {
+.codex-editor .ce-flex-block__item-control:hover,
+.codex-editor .ce-grid-block__item-control:hover {
 	background: var(--theme--background-accent);
+}
+
+.codex-editor .ce-flex-block__item-control--active {
+	background: var(--theme--primary, #0d6efd);
+	border-color: var(--theme--primary, #0d6efd);
+	color: #fff;
+}
+
+.codex-editor .ce-grid-block__preview {
+	padding: 0.75rem;
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 0.75rem;
+}
+
+.codex-editor .ce-grid-block__item {
+	position: relative;
+	padding: 0.55rem 0.75rem;
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	color: var(--theme--form--field--input--foreground);
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.codex-editor .ce-grid-block__item-controls {
+	display: flex;
+	gap: 0.25rem;
+	flex-wrap: wrap;
+}
+
+.codex-editor .ce-grid-block__item-control {
+	padding: 0.2rem 0.5rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	border-radius: var(--theme--border-radius);
+	cursor: pointer;
+	font-size: 0.85rem;
+}
+
+.codex-editor .ce-grid-block__item-control:hover {
+	background: var(--theme--background-accent);
+}
+
+.codex-editor .ce-grid-tune__group {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem;
+}
+
+.codex-editor .ce-grid-tune__label {
+	width: 100%;
+	font-size: 0.8rem;
+	color: var(--theme--form--field--input--foreground-subdued);
+	padding: 0 0.25rem 0.25rem;
 }
 
 .codex-editor .ce-flex-block__layout-controls {

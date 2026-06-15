@@ -64,13 +64,25 @@ export class Alignment implements BlockTune {
 
     wrap(blockContent: HTMLElement) {
         this.wrapper = document.createElement('div');
-
-        this.wrapper.classList.add(
-            this.alignmentOptions.find((align) => align.name === this.data.alignment)?.css_class as string,
-        );
-
+        this.applyAlignment();
         this.wrapper.append(blockContent);
         return this.wrapper;
+    }
+
+    /**
+     * Reflect the current alignment onto the wrapper. Non-left alignments force
+     * the wrapper to full width so that text-align actually has room to take
+     * effect (e.g. when the block sits inside a shrink-to-fit flex/grid cell).
+     */
+    private applyAlignment() {
+        if (!this.wrapper) return;
+
+        for (const { name, css_class } of this.alignmentOptions) {
+            this.wrapper.classList.toggle(css_class, this.data.alignment === name);
+        }
+
+        this.wrapper.style.textAlign = this.data.alignment;
+        this.wrapper.style.width = this.data.alignment === 'left' ? '' : '100%';
     }
 
     render() {
@@ -98,9 +110,7 @@ export class Alignment implements BlockTune {
                     button.classList.toggle(this.api.styles.settingsButtonActive, button === element);
                 }
 
-                for (const { name, css_class } of this.alignmentOptions) {
-                    this.wrapper?.classList.toggle(css_class, this.data.alignment === name);
-                }
+                this.applyAlignment();
             });
         }
 

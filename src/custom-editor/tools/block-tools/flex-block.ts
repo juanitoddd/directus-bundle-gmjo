@@ -3,8 +3,9 @@ import { IconPlus } from '@codexteam/icons';
 import { blocksToHtml } from '../utils/block-utils';
 
 interface FlexBlockItem {
-	id: string;	
+	id: string;
 	content?: any;
+	grow?: boolean;
 }
 
 interface FlexBlockData {
@@ -128,8 +129,9 @@ export default class FlexBlock {
 
 		this.data.items.forEach((item, index) => {
 			const itemElement = document.createElement('div');
-			itemElement.classList.add('ce-flex-block__item');			
-			
+			itemElement.classList.add('ce-flex-block__item');
+			itemElement.classList.toggle('ce-flex-block__item--grow', !!item.grow);
+
 			const richPreview = document.createElement('div');
 			richPreview.classList.add('ce-flex-block__item-rich-preview');
 			const html = blocksToHtml(item.content?.blocks || []);
@@ -145,6 +147,19 @@ export default class FlexBlock {
 			editButton.classList.add('ce-flex-block__item-control');
 			editButton.addEventListener('click', () => this.editItem(index));
 			controls.appendChild(editButton);
+
+			const growButton = document.createElement('button');
+			growButton.type = 'button';
+			growButton.textContent = item.grow ? 'Grow: on' : 'Grow: off';
+			growButton.classList.add('ce-flex-block__item-control');
+			growButton.classList.toggle('ce-flex-block__item-control--active', !!item.grow);
+			growButton.addEventListener('click', () => {
+				item.grow = !item.grow;
+				this.data.items[index] = item;
+				this.renderPreview();
+				this.block?.dispatchChange();
+			});
+			controls.appendChild(growButton);
 
 			const leftButton = document.createElement('button');
 			leftButton.type = 'button';

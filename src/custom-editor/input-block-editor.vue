@@ -42,6 +42,7 @@ const props = withDefaults(
 			'FontFamilyPicker',
 			'htmlblock',
 			'flexblock',
+			'gridblock',
 		],
 		font: 'sans-serif',
 	},

@@ -15,6 +15,7 @@ import { Alignment } from './tools/tunes/alignment';
 import { AttachesTool, ImageTool } from './plugins';
 import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
+import GridBlock from './tools/block-tools/grid-block';
 import { Flex } from './tools/tunes/flex';
 import ColorPicker from 'editorjs-color-picker';
 import WeightPicker from './tools/inline-tools/weights';
@@ -158,6 +159,12 @@ export default function getTools(
                 uploader: uploaderConfig,
             },
             tunes: ['flex'],
+        },
+        gridblock: {
+            class: GridBlock,
+            config: {
+                uploader: uploaderConfig,
+            },
         },
         flex: {
             class: Flex,
