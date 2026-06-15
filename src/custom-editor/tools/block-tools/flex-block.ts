@@ -150,8 +150,8 @@ export default class FlexBlock {
 
 			const growButton = document.createElement('button');
 			growButton.type = 'button';
-			growButton.textContent = item.grow ? 'Grow: on' : 'Grow: off';
-			growButton.classList.add('ce-flex-block__item-control');
+			growButton.textContent = item.grow ? '←|→' : '→|←';			
+			growButton.classList.add('ce-flex-block__item-control', 'v-icon');
 			growButton.classList.toggle('ce-flex-block__item-control--active', !!item.grow);
 			growButton.addEventListener('click', () => {
 				item.grow = !item.grow;

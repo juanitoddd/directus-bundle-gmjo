@@ -21,13 +21,23 @@ export default class FontFamilyPicker implements EditorJS.InlineTool {
 
 	families: string[] = [
 		'GTEestiProText',
-		'Roboto, sans-serif',
-		'Arial, sans-serif',
-		'Helvetica, sans-serif',
-		'Georgia, serif',
-		'Times New Roman, serif',
-		'Courier New, monospace',
-	];	
+		'Roboto',
+		'Arial',
+		'Helvetica',
+		'Georgia',
+		'Times New Roman',
+		'Courier New',
+	];
+
+	familiesClassMap: Record<string, string> = {
+		'GTEestiProText': 'gteesti-pro-text',
+		'Roboto': 'roboto',
+		'Arial': 'arial',
+		'Helvetica': 'helvetica',
+		'Georgia': 'georgia',
+		'Times New Roman': 'times-new-roman',
+		'Courier New': 'courier-new',
+	};
 
 	columns = 9;
 
@@ -97,13 +107,14 @@ export default class FontFamilyPicker implements EditorJS.InlineTool {
 	wrapAndFamily(range: Range | null, family: string) {
 		if (!range) {
 			return;
-		}
+		}		
 		const selectedText = range.extractContents();
-		const span = document.createElement(this.tag);
+		const span = document.createElement(this.tag);		
 		span.classList.add(this.class);
+		// span.classList.add(`font-${this.familiesClassMap[family]}`);
 		span.appendChild(selectedText);
 		span.style.fontFamily = family;
-		span.innerHTML = span.textContent || '';
+		span.innerHTML = span.textContent || '';		
 		range.insertNode(span);
 
 		this.api.selection.expandToTag(span);
@@ -162,6 +173,7 @@ export default class FontFamilyPicker implements EditorJS.InlineTool {
 				style: {
 					fontFamily: true,
 				},
+				// class: true
 			},
 		};
 	}
