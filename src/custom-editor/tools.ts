@@ -18,6 +18,7 @@ import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
 import GridBlock from './tools/block-tools/grid-block';
 import { Flex } from './tools/tunes/flex';
+import { Grid } from './tools/tunes/grid';
 import ColorPicker from 'editorjs-color-picker';
 import WeightPicker from './tools/inline-tools/weights';
 import FontFamilyPicker from './tools/inline-tools/fontfamily';
@@ -174,10 +175,13 @@ export default function getTools(
             config: {
                 uploader: uploaderConfig,
             },
-            tunes: ['spacing'],
+            tunes: ['grid', 'spacing'],
         },
         flex: {
             class: Flex,
+        },
+        grid: {
+            class: Grid,
         },
         htmlblock: {
             class: HTMLBlock,
@@ -213,6 +217,10 @@ export default function getTools(
 
     if (!tools.flex && 'flex' in defaults) {
         tools.flex = defaults.flex;
+    }
+
+    if (!tools.grid && 'grid' in defaults) {
+        tools.grid = defaults.grid;
     }
 
     // Add alignment and format to all tools that support them.

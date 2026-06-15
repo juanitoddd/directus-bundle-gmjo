@@ -76,11 +76,13 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 // and always matches the number of cells.
                 const items = Array.isArray(data.items) ? data.items : [];
                 const columns = Math.max(1, Math.round(Number(data.columns) || items.length || 1));
+                const alignItems = block.tunes?.grid?.alignItems;
 
                 const containerStyle = [
                     'display: grid',
                     `grid-template-columns: repeat(${columns}, 1fr)`,
                     'gap: 0.75rem',
+                    ...(alignItems ? [`align-items: ${escapeHtml(alignItems)}`] : []),
                 ].join('; ');
 
                 const children = items.map((item: any) => {
