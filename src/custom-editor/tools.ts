@@ -12,6 +12,7 @@ import TableTool from '@editorjs/table';
 import UnderlineTool from '@editorjs/underline';
 import ToggleBlock from 'editorjs-toggle-block';
 import { Alignment } from './tools/tunes/alignment';
+import { Spacing } from './tools/tunes/spacing';
 import { AttachesTool, ImageTool } from './plugins';
 import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
@@ -45,39 +46,42 @@ export default function getTools(
         header: {
             class: HeaderTool,
             inlineToolbar: inlineTools,
-            tunes: ['alignment'],
+            tunes: ['alignment', 'spacing'],
         },
         paragraph: {
             class: ParagraphTool,
             inlineToolbar: inlineTools,
-            tunes: ['alignment'],
+            tunes: ['alignment', 'spacing'],
         },
         list: {
             class: NestedListTool,
             inlineToolbar: false,
-            tunes: ['alignment'],
+            tunes: ['alignment', 'spacing'],
         },
         image: {
             class: ImageTool,
             config: {
                 uploader: uploaderConfig,
             },
-            tunes: ['alignment'],
+            tunes: ['alignment', 'spacing'],
         },
         attaches: {
             class: AttachesTool,
             config: {
                 uploader: uploaderConfig,
             },
-            tunes: ['alignment'],
+            tunes: ['alignment', 'spacing'],
         },
         alignment: {
             class: Alignment,
         },
+        spacing: {
+            class: Spacing,
+        },
         nestedlist: {
             class: NestedListTool,
             inlineToolbar: inlineTools,
-            tunes: ['alignment'],
+            tunes: ['alignment', 'spacing'],
         },
         delimiter: {
             class: DelimiterTool,
@@ -192,6 +196,10 @@ export default function getTools(
         tools.alignment = defaults.alignment;
     }
 
+    if (!tools.spacing && 'spacing' in defaults) {
+        tools.spacing = defaults.spacing;
+    }
+
     if (!tools.format && 'format' in defaults) {
         tools.format = defaults.format;
     }
@@ -203,15 +211,15 @@ export default function getTools(
     // Add alignment and format to all tools that support them.
     if ('alignment' in tools && 'format' in tools) {
         if ('paragraph' in tools) {
-            tools.paragraph.tunes = ['alignment', 'format'];
+            tools.paragraph.tunes = ['alignment', 'spacing', 'format'];
         }
 
         if ('header' in tools) {
-            tools.header.tunes = ['alignment', 'format'];
+            tools.header.tunes = ['alignment', 'spacing', 'format'];
         }
 
         if ('quote' in tools) {
-            tools.quote.tunes = ['alignment', 'format'];
+            tools.quote.tunes = ['alignment', 'spacing', 'format'];
         }
     }
 

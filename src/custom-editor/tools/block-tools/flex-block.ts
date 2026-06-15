@@ -135,7 +135,7 @@ export default class FlexBlock {
 			const richPreview = document.createElement('div');
 			richPreview.classList.add('ce-flex-block__item-rich-preview');
 			const html = blocksToHtml(item.content?.blocks || []);
-			richPreview.innerHTML = html || '<em>Rich content</em>';
+			richPreview.innerHTML = html || '<em>empty</em>';
 			itemElement.appendChild(richPreview);
 
 			const controls = document.createElement('div');

@@ -299,6 +299,40 @@
 	padding: 0 0.25rem 0.25rem;
 }
 
+/** Spacing tune **/
+
+.ce-spacing-tune {
+	padding: 0.5rem;
+	min-width: 180px;
+}
+
+/* grid-template-columns: repeat(4, 1fr); */
+.ce-spacing-tune__inputs {
+	display: grid;
+	grid-template-areas:
+		". top top ."
+		"left left right right"
+		". bottom bottom .";
+	gap: 0.25rem;
+}
+
+.ce-spacing-tune__input {
+	width: 100%;
+	min-width: 0;
+	padding: 0.3rem;
+	text-align: center;
+	font-size: 0.8rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--form--field--input--background);
+	color: var(--theme--form--field--input--foreground);
+}
+
+.ce-spacing-tune__input:focus {
+	outline: none;
+	border-color: var(--theme--form--field--input--border-color-focus);
+}
+
 .codex-editor .ce-flex-block__layout-controls {
 	display: flex;
 	gap: 0.5rem;

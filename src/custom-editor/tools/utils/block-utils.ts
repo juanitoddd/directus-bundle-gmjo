@@ -166,14 +166,33 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 }
         }
 
-        // Apply the alignment tune (stored under block.tunes.alignment), mirroring
-        // the editor tune: non-left alignments also force full width so text-align
-        // takes effect inside shrink-to-fit flex/grid cells.
+        // Reflect block tunes (stored under block.tunes) as inline styles on a
+        // single wrapper, mirroring the editor tunes.
+        const styleRules: string[] = [];
+
+        // Alignment: non-left alignments also force full width so text-align takes
+        // effect inside shrink-to-fit flex/grid cells.
         const alignment = block.tunes?.alignment?.alignment;
+        if (alignment && alignment !== 'left') {
+            styleRules.push(`text-align: ${escapeHtml(alignment)}`, 'width: 100%');
+        }
+
+        // Spacing: per-side padding/margin.
+        const spacing = block.tunes?.spacing;
+        if (spacing) {
+            for (const side of ['top', 'right', 'bottom', 'left']) {
+                const pad = spacing.padding?.[side];
+                if (pad) styleRules.push(`padding-${side}: ${escapeHtml(String(pad))}`);
+
+                const margin = spacing.margin?.[side];
+                if (margin) styleRules.push(`margin-${side}: ${escapeHtml(String(margin))}`);
+            }
+        }
+
         let blockHtml = blockParts.join('');
 
-        if (blockHtml && alignment && alignment !== 'left') {
-            blockHtml = `<div style="text-align: ${escapeHtml(alignment)}; width: 100%">${blockHtml}</div>`;
+        if (blockHtml && styleRules.length) {
+            blockHtml = `<div style="${styleRules.join('; ')}">${blockHtml}</div>`;
         }
 
         parts.push(blockHtml);
