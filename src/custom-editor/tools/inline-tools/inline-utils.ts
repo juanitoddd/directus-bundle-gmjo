@@ -1,6 +1,6 @@
 import type { API } from '@editorjs/editorjs';
 
-type StyleProperty = 'fontFamily' | 'fontWeight';
+type StyleProperty = 'fontFamily' | 'fontWeight' | 'fontSize';
 
 interface StyledSpanConfig {
 	className: string;

@@ -40,6 +40,7 @@ const props = withDefaults(
 			'ColorPicker',
 			'WeightPicker',
 			'FontFamilyPicker',
+			'FontSizePicker',
 			'htmlblock',
 			'flexblock',
 			'gridblock',

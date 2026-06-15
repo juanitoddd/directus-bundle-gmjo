@@ -21,6 +21,7 @@ import { Flex } from './tools/tunes/flex';
 import ColorPicker from 'editorjs-color-picker';
 import WeightPicker from './tools/inline-tools/weights';
 import FontFamilyPicker from './tools/inline-tools/fontfamily';
+import FontSizePicker from './tools/inline-tools/fontsize';
 // EXAMPLE (Part 3/4): add marker tool
 // import Marker from "@editorjs/marker";
 
@@ -40,7 +41,7 @@ export default function getTools(
     const tools: Record<string, any> = {};
     const fileRequiresTools = new Set(['attaches', 'image']);
 
-    const inlineTools = ['link', 'ColorPicker', 'WeightPicker', 'FontFamilyPicker', 'underline', 'italic'];
+    const inlineTools = ['link', 'ColorPicker', 'WeightPicker', 'FontFamilyPicker', 'FontSizePicker', 'underline', 'italic'];
 
     const defaults: Record<string, any> = {
         header: {
@@ -155,6 +156,10 @@ export default function getTools(
         },        
         FontFamilyPicker: {
             class: FontFamilyPicker,
+            inlineToolbar: true,
+        },
+        FontSizePicker: {
+            class: FontSizePicker,
             inlineToolbar: true,
         },
         flexblock: {
