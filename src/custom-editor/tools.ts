@@ -134,18 +134,18 @@ export default function getTools(
             inlineToolbar: true,
             config: {
                 colors: [
+                    '#000',
                     '#2e3c74',
                     '#0055cc',
                     '#1f6a83',
-                    '#206e4e',
-                    '#e56910',
+                    '#206e4e',                    
                     '#ae2e24',
                     '#5e4db2',
+                    '#444',
                     '#758195',
                     '#1e7afd',
                     '#2998bd',
-                    '#23a06b',
-                    '#fea363',
+                    '#23a06b',                    
                     '#c9372c',
                     '#8270db',
                 ]

@@ -1,5 +1,8 @@
 import type { API, BlockToolConstructorOptions } from '@editorjs/editorjs';
+import type { MenuConfig } from '@editorjs/editorjs/types/tools/menu-config';
 import { blocksToHtml } from '../utils/block-utils';
+
+const COLUMNS_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>';
 
 interface GridBlockItem {
 	id: string;
@@ -9,11 +12,20 @@ interface GridBlockItem {
 interface GridBlockData {
 	items: GridBlockItem[];
 	columns: number;
+	columnTemplate?: string;
 }
 
 const DEFAULT_COLUMNS = 2;
 const MIN_COLUMNS = 1;
 const MAX_COLUMNS = 6;
+
+// Ratio presets per column count. "Equal" is represented as an absent template
+// (i.e. repeat(n, 1fr)); only non-equal ratios are listed here. Add entries for
+// other column counts to expose more layouts (e.g. 3: ['1fr 1fr 2fr', ...]).
+const COLUMN_LAYOUTS: Record<number, string[]> = {
+	2: ['2fr 3fr', '3fr 2fr'],
+	3: ['1fr 2fr 1fr', '1fr 2fr 2fr', '2fr 2fr 1fr'],
+};
 
 function createId() {
 	return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -57,6 +69,7 @@ export default class GridBlock {
 			this.data = {
 				items: incoming!.items,
 				columns,
+				columnTemplate: this.normalizeTemplate(incoming?.columnTemplate, columns),
 			};
 		} else {
 			this.data = {
@@ -85,62 +98,88 @@ export default class GridBlock {
 		return wrapper;
 	}
 
-	renderSettings() {
-		const wrapper = document.createElement('div');
-		wrapper.classList.add('ce-grid-tune');
-
-		const group = document.createElement('div');
-		group.classList.add('ce-grid-tune__group');
-
-		const label = document.createElement('div');
-		label.classList.add('ce-grid-tune__label');
-		label.textContent = 'Columns';
-		group.appendChild(label);
+	renderSettings(): MenuConfig {
+		const items: any[] = [];
 
 		for (let count = MIN_COLUMNS; count <= MAX_COLUMNS; count++) {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.textContent = String(count);
-			button.title = `${count} columns`;
-			button.classList.add(this.api.styles.settingsButton);
-			button.classList.toggle(this.api.styles.settingsButtonActive, count === this.data.columns);
-			button.addEventListener('click', () => {
-				const applied = this.setColumns(count);
-				if (!applied) return;
+			const layouts = COLUMN_LAYOUTS[count];
+			const title = `${count} column${count > 1 ? 's' : ''}`;
 
-				for (const sibling of group.querySelectorAll('button')) {
-					sibling.classList.toggle(
-						this.api.styles.settingsButtonActive,
-						sibling === button,
-					);
-				}
-			});
-			group.appendChild(button);
+			if (layouts && layouts.length) {
+				// A count with ratio presets gets its own nested popover:
+				// "Equal" (no template) plus each non-equal ratio.
+				const layoutItems = [
+					{
+						title: 'Equal',
+						isActive: this.data.columns === count && !this.data.columnTemplate,
+						closeOnActivate: true,
+						onActivate: () => this.setColumns(count),
+					},
+					...layouts.map((template) => ({
+						title: template,
+						isActive: this.data.columns === count && this.data.columnTemplate === template,
+						closeOnActivate: true,
+						onActivate: () => this.setColumns(count, template),
+					})),
+				];
+
+				items.push({
+					title,
+					isActive: this.data.columns === count,
+					children: {
+						searchable: false,
+						items: layoutItems,
+					},
+				});
+			} else {
+				items.push({
+					title,
+					isActive: count === this.data.columns,
+					closeOnActivate: true,
+					onActivate: () => this.setColumns(count),
+				});
+			}
 		}
 
-		wrapper.appendChild(group);
-		return wrapper;
+		return [
+			{
+				icon: COLUMNS_ICON,
+				title: 'Columns',
+				secondaryLabel: String(this.data.columns),
+				children: {
+					searchable: false,
+					items,
+				},
+			},
+		] as MenuConfig;
 	}
 
 	/**
-	 * Set the column count, adding empty cells when growing and removing
-	 * trailing cells when shrinking. Returns false if the user cancels a
-	 * removal that would discard content.
+	 * Keep a column template only if its track count matches the column count;
+	 * otherwise drop it (falls back to equal `repeat(n, 1fr)`).
 	 */
-	setColumns(next: number): boolean {
+	private normalizeTemplate(template: string | undefined, columns: number): string | undefined {
+		if (!template) return undefined;
+		const trimmed = template.trim();
+		if (!trimmed) return undefined;
+		return trimmed.split(/\s+/).length === columns ? trimmed : undefined;
+	}
+
+	/**
+	 * Set the column count (adding empty cells when growing, removing trailing
+	 * cells when shrinking) and an optional column template (e.g. "2fr 3fr").
+	 * An absent/invalid template means equal columns. Returns false if the user
+	 * cancels a removal that would discard content.
+	 */
+	setColumns(next: number, template?: string): boolean {
 		const target = this.clampColumns(next);
 		const current = this.data.items.length;
-
-		if (target === current) {
-			this.data.columns = target;
-			return true;
-		}
 
 		if (target > current) {
 			for (let i = current; i < target; i++) {
 				this.data.items.push(createEmptyItem());
 			}
-		} else {
+		} else if (target < current) {
 			const removed = this.data.items.slice(target);
 			if (removed.some(hasContent)) {
 				const confirmed = window.confirm(
@@ -152,6 +191,7 @@ export default class GridBlock {
 		}
 
 		this.data.columns = target;
+		this.data.columnTemplate = this.normalizeTemplate(template, target);
 		this.renderPreview();
 		this.block?.dispatchChange();
 		return true;
@@ -190,7 +230,7 @@ export default class GridBlock {
 		if (!preview) return;
 		preview.innerHTML = '';
 		preview.style.display = 'grid';
-		preview.style.gridTemplateColumns = `repeat(${this.data.columns}, 1fr)`;
+		preview.style.gridTemplateColumns = this.data.columnTemplate || `repeat(${this.data.columns}, 1fr)`;
 		// Gap is owned by the grid tune (falls back to the CSS default).
 
 		this.data.items.forEach((item, index) => {

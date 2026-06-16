@@ -103,10 +103,13 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 const columns = Math.max(1, Math.round(Number(data.columns) || items.length || 1));
                 const alignItems = block.tunes?.grid?.alignItems;
                 const gap = block.tunes?.grid?.gap || '0.75rem';
+                const template = typeof data.columnTemplate === 'string' && data.columnTemplate.trim()
+                    ? data.columnTemplate.trim()
+                    : `repeat(${columns}, 1fr)`;
 
                 const containerStyle = [
                     'display: grid',
-                    `grid-template-columns: repeat(${columns}, 1fr)`,
+                    `grid-template-columns: ${escapeHtml(template)}`,
                     `gap: ${escapeHtml(gap)}`,
                     ...(alignItems ? [`align-items: ${escapeHtml(alignItems)}`] : []),
                 ].join('; ');
