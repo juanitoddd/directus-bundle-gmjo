@@ -334,6 +334,23 @@
 	border-color: var(--theme--form--field--input--border-color-focus);
 }
 
+/* Generic tune text input (e.g. flex/grid gap) */
+.ce-tune__input {
+	width: 100%;
+	min-width: 0;
+	padding: 0.3rem 0.5rem;
+	font-size: 0.8rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--form--field--input--background);
+	color: var(--theme--form--field--input--foreground);
+}
+
+.ce-tune__input:focus {
+	outline: none;
+	border-color: var(--theme--form--field--input--border-color-focus);
+}
+
 .codex-editor .ce-flex-block__layout-controls {
 	display: flex;
 	gap: 0.5rem;

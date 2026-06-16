@@ -191,7 +191,7 @@ export default class GridBlock {
 		preview.innerHTML = '';
 		preview.style.display = 'grid';
 		preview.style.gridTemplateColumns = `repeat(${this.data.columns}, 1fr)`;
-		preview.style.gap = '0.75rem';
+		// Gap is owned by the grid tune (falls back to the CSS default).
 
 		this.data.items.forEach((item, index) => {
 			const itemElement = document.createElement('div');

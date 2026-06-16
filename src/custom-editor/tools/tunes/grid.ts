@@ -2,6 +2,7 @@ import type { API, BlockAPI, BlockToolConstructorOptions, BlockTune } from '@edi
 
 interface GridTuneData {
 	alignItems: 'stretch' | 'flex-start' | 'center' | 'flex-end';
+	gap?: string;
 }
 
 const alignOptions = [
@@ -23,6 +24,7 @@ export class Grid implements BlockTune {
 
 		this.data = {
 			alignItems: (data as GridTuneData)?.alignItems || 'stretch',
+			gap: (data as GridTuneData)?.gap || '',
 		};
 	}
 
@@ -36,6 +38,8 @@ export class Grid implements BlockTune {
 			return;
 		}
 		preview.style.alignItems = this.data.alignItems;
+		// Empty gap falls back to the CSS default on .ce-grid-block__preview.
+		preview.style.gap = this.data.gap || '';
 	}
 
 	wrap(blockContent: HTMLElement) {
@@ -58,7 +62,32 @@ export class Grid implements BlockTune {
 		});
 
 		wrapper.append(alignGroup);
+		wrapper.append(this.createGapInput());
 		return wrapper;
+	}
+
+	private createGapInput() {
+		const group = document.createElement('div');
+		group.classList.add('ce-flex-tune__group');
+
+		const label = document.createElement('div');
+		label.classList.add('ce-flex-tune__label');
+		label.textContent = 'Gap';
+		group.appendChild(label);
+
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.classList.add('ce-tune__input');
+		input.placeholder = '0.75rem';
+		input.value = this.data.gap || '';
+		input.addEventListener('input', () => {
+			this.data.gap = input.value.trim();
+			this.updatePreviewStyle();
+			this.block?.dispatchChange();
+		});
+		group.appendChild(input);
+
+		return group;
 	}
 
 	private createButtonGroup(

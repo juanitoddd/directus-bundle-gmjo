@@ -4,6 +4,7 @@ interface FlexTuneData {
 	direction: 'row' | 'column';
 	justify: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around';
 	align: 'stretch' | 'flex-start' | 'center' | 'flex-end';
+	gap?: string;
 }
 
 const directionOptions = [
@@ -44,7 +45,8 @@ export class Flex implements BlockTune {
 		preview.style.flexDirection = this.data.direction;
 		preview.style.justifyContent = this.data.justify;
 		preview.style.alignItems = this.data.align;
-		preview.style.gap = '0.75rem';
+		// Empty gap falls back to the CSS default on .ce-flex-block__preview.
+		preview.style.gap = this.data.gap || '';
 	}
 
 	constructor({ api, data, config, block }: BlockToolConstructorOptions) {
@@ -62,6 +64,7 @@ export class Flex implements BlockTune {
 				direction: (data as FlexTuneData).direction || 'row',
 				justify: (data as FlexTuneData).justify || 'flex-start',
 				align: (data as FlexTuneData).align || 'center',
+				gap: (data as FlexTuneData).gap || '',
 			};
 		}
 	}
@@ -106,7 +109,32 @@ export class Flex implements BlockTune {
 		wrapper.append(directionGroup);
 		wrapper.append(justifyGroup);
 		wrapper.append(alignGroup);
+		wrapper.append(this.createGapInput());
 		return wrapper;
+	}
+
+	private createGapInput() {
+		const group = document.createElement('div');
+		group.classList.add('ce-flex-tune__group');
+
+		const label = document.createElement('div');
+		label.classList.add('ce-flex-tune__label');
+		label.textContent = 'Gap';
+		group.appendChild(label);
+
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.classList.add('ce-tune__input');
+		input.placeholder = '0.75rem';
+		input.value = this.data.gap || '';
+		input.addEventListener('input', () => {
+			this.data.gap = input.value.trim();
+			this.updatePreviewStyle();
+			this.block?.dispatchChange();
+		});
+		group.appendChild(input);
+
+		return group;
 	}
 
 private getCurrentValue(labelText: string) {

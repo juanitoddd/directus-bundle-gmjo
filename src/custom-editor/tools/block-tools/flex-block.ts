@@ -120,7 +120,7 @@ export default class FlexBlock {
 		preview.innerHTML = '';
 		preview.style.display = 'flex';
 		preview.style.flexWrap = 'wrap';
-		preview.style.gap = '0.75rem';
+		// Gap is owned by the flex tune (falls back to the CSS default).
 
 		const existingPanel = preview.parentElement?.querySelector('.ce-flex-block__editor-panel');
 		if (existingPanel) {

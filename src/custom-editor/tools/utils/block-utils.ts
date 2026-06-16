@@ -74,13 +74,15 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 const justify = tune.justify || 'flex-start';
                 const align = tune.align || 'center';
 
+                const gap = tune.gap || '0.75rem';
+
                 const containerStyle = [
                     'display: flex',
                     'flex-wrap: wrap',
                     `flex-direction: ${escapeHtml(direction)}`,
                     `justify-content: ${escapeHtml(justify)}`,
                     `align-items: ${escapeHtml(align)}`,
-                    'gap: 0.75rem',
+                    `gap: ${escapeHtml(gap)}`,
                 ].join('; ');
 
                 const items = Array.isArray(data.items) ? data.items : [];
@@ -100,11 +102,12 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 const items = Array.isArray(data.items) ? data.items : [];
                 const columns = Math.max(1, Math.round(Number(data.columns) || items.length || 1));
                 const alignItems = block.tunes?.grid?.alignItems;
+                const gap = block.tunes?.grid?.gap || '0.75rem';
 
                 const containerStyle = [
                     'display: grid',
                     `grid-template-columns: repeat(${columns}, 1fr)`,
-                    'gap: 0.75rem',
+                    `gap: ${escapeHtml(gap)}`,
                     ...(alignItems ? [`align-items: ${escapeHtml(alignItems)}`] : []),
                 ].join('; ');
 
