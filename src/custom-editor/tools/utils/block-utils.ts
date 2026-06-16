@@ -8,6 +8,29 @@ export function escapeHtml(str: string) {
         .replace(/'/g, '&#39;');
 }
 
+/**
+ * Recursively render @editorjs/nested-list items. Each item is either a legacy
+ * plain string or an object `{ content, items }` whose `items` are nested
+ * children using the same list tag. `content` is treated as HTML (sanitized).
+ */
+function renderNestedList(items: any[] | undefined, tag: string, sanitize: (s: string) => string): string {
+    if (!Array.isArray(items) || items.length === 0) return '';
+
+    const lis = items.map((item) => {
+        if (item == null) return '';
+
+        if (typeof item === 'string') {
+            return `<li>${sanitize(item)}</li>`;
+        }
+
+        const content = sanitize(item.content ?? '');
+        const sublist = renderNestedList(item.items, tag, sanitize);
+        return `<li>${content}${sublist}</li>`;
+    }).join('');
+
+    return `<${tag}>${lis}</${tag}>`;
+}
+
 export function blocksToHtml(blocks: any[] | undefined): string {
     if (!blocks || !Array.isArray(blocks) || blocks.length === 0) return '';
 
@@ -41,7 +64,7 @@ export function blocksToHtml(blocks: any[] | undefined): string {
         const type = block.type;
         const data = block.data || {};
         const blockParts: string[] = [];
-
+        
         switch (type) {
             case 'flexblock': {
                 // Container layout comes from the Flex block tune (stored under
@@ -107,12 +130,11 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 const safe = sanitize(data.text || '');
                 blockParts.push(`<h${level}>${safe}</h${level}>`);
                 break;
-            }
-
-            case 'list': {
+            }            
+            case 'list':
+            case 'nestedlist': {
                 const tag = data.style === 'ordered' ? 'ol' : 'ul';
-                const items = (data.items || []).map((it: string) => `<li>${escapeHtml(it)}</li>`).join('');
-                blockParts.push(`<${tag}>${items}</${tag}>`);
+                blockParts.push(renderNestedList(data.items, tag, sanitize));
                 break;
             }
 
