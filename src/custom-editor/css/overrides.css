@@ -351,6 +351,25 @@
 	color: var(--theme--primary, #0d6efd);
 }
 
+/* Button block */
+.codex-editor .ce-button-block {
+	padding: 0.25rem 0;
+}
+
+.codex-editor .ce-button-block__link {
+	display: inline-block;
+	text-decoration: none;
+	cursor: text;
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	outline: none;
+}
+
+.ce-button-settings {
+	padding: 0.25rem;
+	min-width: 180px;
+}
+
 /* Generic tune text input (e.g. flex/grid gap) */
 .ce-tune__input {
 	width: 100%;

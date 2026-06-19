@@ -1,3 +1,5 @@
+import { BUTTON_SIZES } from '../block-tools/button-block';
+
 export function escapeHtml(str: string) {
     if (!str && str !== '') return '';
     return String(str)
@@ -177,6 +179,34 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 const raw = data.html || data.source || data.content || '';
                 const safe = sanitize(raw);
                 blockParts.push(`<div class="editorjs-htmlblock">${safe}</div>`);
+                break;
+            }
+
+            case 'button': {
+                // Label is stored as HTML (inline tools), so sanitize rather than escape.
+                const text = sanitize(data.text || 'Button');
+                const href = escapeHtml(data.href || '#');
+                const target = data.target === '_blank' ? '_blank' : '_self';
+                const rel = target === '_blank' ? ' rel="noopener noreferrer"' : '';
+
+                const preset = BUTTON_SIZES[data.size as keyof typeof BUTTON_SIZES] || BUTTON_SIZES.medium;
+                const styleRules: string[] = [
+                    'display: inline-block',
+                    'text-decoration: none',
+                    `padding: ${preset.padding}`,
+                    `font-size: ${preset.fontSize}`,
+                    `border-radius: ${preset.borderRadius}`,
+                ];
+                if (data.color) styleRules.push(`color: ${escapeHtml(String(data.color))}`);
+                if (data.background) styleRules.push(`background-color: ${escapeHtml(String(data.background))}`);
+                if (data.borderColor) styleRules.push(`border: 1px solid ${escapeHtml(String(data.borderColor))}`);
+                // Hover background is exposed as a CSS var; the front-end needs a
+                // rule like `.editorjs-button:hover { background: var(--btn-hover-bg) }`.
+                if (data.hoverBackground) styleRules.push(`--btn-hover-bg: ${escapeHtml(String(data.hoverBackground))}`);
+
+                blockParts.push(
+                    `<a class="editorjs-button" href="${href}" target="${target}"${rel} style="${styleRules.join('; ')}">${text}</a>`,
+                );
                 break;
             }
 

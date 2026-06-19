@@ -44,6 +44,7 @@ const props = withDefaults(
 			'htmlblock',
 			'flexblock',
 			'gridblock',
+			'button',
 		],
 		font: 'sans-serif',
 	},

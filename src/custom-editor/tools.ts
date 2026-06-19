@@ -17,6 +17,8 @@ import { AttachesTool, ImageTool } from './plugins';
 import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
 import GridBlock from './tools/block-tools/grid-block';
+import ButtonBlock from './tools/block-tools/button-block';
+import { EDITOR_COLORS } from './tools/utils/colors';
 import { Flex } from './tools/tunes/flex';
 import { Grid } from './tools/tunes/grid';
 import ColorPicker from 'editorjs-color-picker';
@@ -133,22 +135,7 @@ export default function getTools(
             class: ColorPicker,
             inlineToolbar: true,
             config: {
-                colors: [
-                    '#000',
-                    '#2e3c74',
-                    '#0055cc',
-                    '#1f6a83',
-                    '#206e4e',                    
-                    '#ae2e24',
-                    '#5e4db2',
-                    '#444',
-                    '#758195',
-                    '#1e7afd',
-                    '#2998bd',
-                    '#23a06b',                    
-                    '#c9372c',
-                    '#8270db',
-                ]
+                colors: EDITOR_COLORS,
             }
         },
         WeightPicker: {
@@ -186,6 +173,16 @@ export default function getTools(
         htmlblock: {
             class: HTMLBlock,
             tunes: ['spacing'],
+        },
+        button: {
+            class: ButtonBlock,
+            // Inline tools for the button label, minus `link` (the button is
+            // already an <a>; nesting anchors would be invalid).
+            inlineToolbar: ['ColorPicker', 'WeightPicker', 'FontFamilyPicker', 'FontSizePicker', 'underline', 'italic'],
+            config: {
+                colors: EDITOR_COLORS,
+            },
+            tunes: ['alignment', 'spacing'],
         },
         // EXAMPLE (Part 4/4): add marker tool
         //     class: Marker,
