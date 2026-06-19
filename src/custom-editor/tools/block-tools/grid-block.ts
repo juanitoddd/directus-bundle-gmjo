@@ -27,6 +27,42 @@ const COLUMN_LAYOUTS: Record<number, string[]> = {
 	3: ['1fr 2fr 1fr', '1fr 2fr 2fr', '2fr 2fr 1fr'],
 };
 
+/** Parse a `fr` template into numeric track weights (falls back to equal). */
+function parseTracks(template: string | undefined, columns: number): number[] {
+	if (!template) return Array.from({ length: columns }, () => 1);
+	const tracks = template.trim().split(/\s+/).map((token) => {
+		const value = parseFloat(token);
+		return Number.isFinite(value) && value > 0 ? value : 1;
+	});
+	return tracks.length ? tracks : Array.from({ length: columns }, () => 1);
+}
+
+/**
+ * Build an SVG icon depicting the column layout as proportional rectangles.
+ * `label` is exposed as an accessible <title> / hover tooltip.
+ */
+function layoutIcon(template: string | undefined, columns: number, label: string): string {
+	const tracks = parseTracks(template, columns);
+	const total = tracks.reduce((sum, value) => sum + value, 0) || tracks.length;
+
+	const width = 36;
+	const height = 16;
+	const gap = 2;
+	const pad = 1;
+	const available = width - pad * 2 - gap * (tracks.length - 1);
+
+	let x = pad;
+	const round = (n: number) => Math.round(n * 100) / 100;
+	const rects = tracks.map((track) => {
+		const w = available * (track / total);
+		const rect = `<rect x="${round(x)}" y="2" width="${round(w)}" height="${height - 4}" rx="2" />`;
+		x += w + gap;
+		return rect;
+	}).join('');
+
+	return `<svg class="ce-grid-layout-icon" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><title>${label}</title>${rects}</svg>`;
+}
+
 function createId() {
 	return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -110,13 +146,17 @@ export default class GridBlock {
 				// "Equal" (no template) plus each non-equal ratio.
 				const layoutItems = [
 					{
-						title: 'Equal',
+						icon: layoutIcon(undefined, count, 'Equal'),
+						title: '',
+						name: `grid-layout-${count}-equal`,
 						isActive: this.data.columns === count && !this.data.columnTemplate,
 						closeOnActivate: true,
 						onActivate: () => this.setColumns(count),
 					},
-					...layouts.map((template) => ({
-						title: template,
+					...layouts.map((template, index) => ({
+						icon: layoutIcon(template, count, template),
+						title: '',
+						name: `grid-layout-${count}-${index}`,
 						isActive: this.data.columns === count && this.data.columnTemplate === template,
 						closeOnActivate: true,
 						onActivate: () => this.setColumns(count, template),

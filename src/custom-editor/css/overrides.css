@@ -334,6 +334,23 @@
 	border-color: var(--theme--form--field--input--border-color-focus);
 }
 
+/* Grid column-layout options: widen the icon slot so the proportional
+   rectangle diagram has room to read clearly. */
+.ce-popover-item[data-item-name^="grid-layout"] .ce-popover-item__icon {
+	width: 48px;
+	min-width: 48px;
+}
+
+.ce-popover-item[data-item-name^="grid-layout"] .ce-grid-layout-icon {
+	width: 100%;
+	height: auto;
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+.ce-popover-item[data-item-name^="grid-layout"].ce-popover-item--active .ce-grid-layout-icon {
+	color: var(--theme--primary, #0d6efd);
+}
+
 /* Generic tune text input (e.g. flex/grid gap) */
 .ce-tune__input {
 	width: 100%;
