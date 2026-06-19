@@ -1,5 +1,140 @@
 import { BUTTON_SIZES } from '../block-tools/button-block';
 
+const PLACEHOLDER_RE = /\{\{\s*([^}]+?)\s*\}\}/g;
+
+/** Does a translation row match the requested language code? */
+function matchesLanguage(row: any, language: string | undefined): boolean {
+    if (!language || !row || typeof row !== 'object') return false;
+    const code = row.languages_code;
+    if (typeof code === 'string') return code === language;
+    if (code && typeof code === 'object') return code.code === language;
+    return false;
+}
+
+/**
+ * When a path segment lands on an array, pick a single row to continue from.
+ * Translation arrays (rows with `languages_code`) resolve to the row for the
+ * requested language (falling back to the first); other arrays use the first row.
+ */
+function pickRowFromArray(arr: any[], language: string | undefined): any {
+    if (!arr.length) return undefined;
+    const isTranslation = arr.some((row) => row && typeof row === 'object' && 'languages_code' in row);
+    if (isTranslation) {
+        return arr.find((row) => matchesLanguage(row, language)) || arr[0];
+    }
+    return arr[0];
+}
+
+/**
+ * Resolve a dot-path (e.g. "author.name" or "translations.biography") against an
+ * item. Arrays encountered mid-path are reduced to a single row (translation by
+ * language when applicable).
+ */
+function resolvePath(item: any, path: string, language?: string): any {
+    return path.split('.').reduce((acc, key) => {
+        if (acc == null) return acc;
+        const target = Array.isArray(acc) ? pickRowFromArray(acc, language) : acc;
+        return target == null ? target : target[key];
+    }, item);
+}
+
+/** Heuristic: does a resolved value look like a Directus file object? */
+function isFileObject(value: any): boolean {
+    return !!value
+        && typeof value === 'object'
+        && (value.id !== undefined)
+        && (value.filename_disk !== undefined || value.filename_download !== undefined
+            || (typeof value.type === 'string' && value.type.startsWith('image')));
+}
+
+function ensureTrailingSlash(url: string): string {
+    if (!url) return '';
+    return url.endsWith('/') ? url : `${url}/`;
+}
+
+/**
+ * Collect every placeholder dot-path used in a template's blocks (recursively).
+ */
+export function collectTemplatePaths(blocks: any[] | undefined): string[] {
+    const paths = new Set<string>();
+
+    const scanString = (str: string) => {
+        let match: RegExpExecArray | null;
+        PLACEHOLDER_RE.lastIndex = 0;
+        // eslint-disable-next-line no-cond-assign
+        while ((match = PLACEHOLDER_RE.exec(str)) !== null) {
+            paths.add(match[1].trim());
+        }
+    };
+
+    const scan = (value: any) => {
+        if (typeof value === 'string') scanString(value);
+        else if (Array.isArray(value)) value.forEach(scan);
+        else if (value && typeof value === 'object') Object.values(value).forEach(scan);
+    };
+
+    scan(blocks || []);
+    return [...paths];
+}
+
+/**
+ * Build the Directus `fields` query for a template: one level of expansion
+ * (`*.*`, so relations/files come back as objects) plus any deeper dot-paths.
+ */
+export function deriveTemplateFields(blocks: any[] | undefined): string[] {
+    const deep = collectTemplatePaths(blocks).filter((p) => p.split('.').length > 2);
+    return ['*.*', ...deep];
+}
+
+/**
+ * Replace `{{dot.path}}` placeholders in a template's blocks with values from
+ * `item`. File-valued placeholders become asset URLs (or a full <img> when the
+ * placeholder is the entire field value). Returns a new blocks array.
+ */
+export function interpolateTemplate(
+    blocks: any[] | undefined,
+    item: any,
+    options: { assetBaseUrl?: string; language?: string } = {},
+): any[] {
+    const base = ensureTrailingSlash(options.assetBaseUrl || '');
+    const language = options.language;
+    const clone = JSON.parse(JSON.stringify(blocks || []));
+
+    const assetUrl = (file: any) => `${base}assets/${file.id}`;
+
+    const tokenValue = (path: string): string => {
+        const value = resolvePath(item, path, language);
+        if (value == null) return '';
+        if (isFileObject(value)) return assetUrl(value);
+        if (typeof value === 'object') return value.id != null ? String(value.id) : '';
+        return String(value);
+    };
+
+    const interpolateString = (str: string): string => {
+        // Whole-field single file placeholder → render an <img>.
+        const single = str.trim().match(/^\{\{\s*([^}]+?)\s*\}\}$/);
+        if (single) {
+            const value = resolvePath(item, single[1].trim(), language);
+            if (isFileObject(value)) {
+                return `<img src="${assetUrl(value)}" alt="" />`;
+            }
+        }
+        return str.replace(PLACEHOLDER_RE, (_m, path) => tokenValue(String(path).trim()));
+    };
+
+    const walk = (value: any): any => {
+        if (typeof value === 'string') return interpolateString(value);
+        if (Array.isArray(value)) return value.map(walk);
+        if (value && typeof value === 'object') {
+            for (const key of Object.keys(value)) value[key] = walk(value[key]);
+            return value;
+        }
+        return value;
+    };
+
+    return walk(clone);
+}
+
 export function escapeHtml(str: string) {
     if (!str && str !== '') return '';
     return String(str)
@@ -33,7 +168,21 @@ function renderNestedList(items: any[] | undefined, tag: string, sanitize: (s: s
     return `<${tag}>${lis}</${tag}>`;
 }
 
-export function blocksToHtml(blocks: any[] | undefined): string {
+/** Key for a resolved reference (collection + item id + template variant). */
+export function referenceKey(collection: any, itemId: any, template?: any): string {
+    return `${collection ?? ''}:${itemId ?? ''}:${template ?? ''}`;
+}
+
+export interface BlocksToHtmlOptions {
+    /**
+     * Pre-resolved reference HTML keyed by `referenceKey(collection, itemId)`.
+     * When a reference block's key is present, its resolved HTML is inlined;
+     * otherwise a hydration placeholder is emitted.
+     */
+    references?: Record<string, string>;
+}
+
+export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOptions = {}): string {
     if (!blocks || !Array.isArray(blocks) || blocks.length === 0) return '';
 
     const parts: string[] = [];
@@ -89,7 +238,7 @@ export function blocksToHtml(blocks: any[] | undefined): string {
 
                 const items = Array.isArray(data.items) ? data.items : [];
                 const children = items.map((item: any) => {
-                    const inner = blocksToHtml(item?.content?.blocks || []);
+                    const inner = blocksToHtml(item?.content?.blocks || [], options);
                     const itemStyle = item?.grow ? 'flex: 1 1 0' : 'flex: 0 0 auto';
                     return `<div class="editorjs-flexblock__item" style="${itemStyle}">${inner}</div>`;
                 }).join('');
@@ -117,7 +266,7 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 ].join('; ');
 
                 const children = items.map((item: any) => {
-                    const inner = blocksToHtml(item?.content?.blocks || []);
+                    const inner = blocksToHtml(item?.content?.blocks || [], options);
                     return `<div class="editorjs-gridblock__item">${inner}</div>`;
                 }).join('');
 
@@ -216,6 +365,21 @@ export function blocksToHtml(blocks: any[] | undefined): string {
             case 'quote': {
                 const caption = escapeHtml(data.caption || '');
                 blockParts.push(`<blockquote><p>${escapeHtml(data.text || '')}</p>${caption ? `<cite>${caption}</cite>` : ''}</blockquote>`);
+                break;
+            }
+
+            case 'reference': {
+                // If the caller pre-resolved this reference (fetched item + template
+                // and interpolated), inline that HTML; otherwise emit a hydration
+                // placeholder for the front-end to fill in.
+                const resolved = options.references?.[referenceKey(data.collection, data.itemId, data.template)];
+                if (resolved != null) {
+                    blockParts.push(resolved);
+                } else {
+                    blockParts.push(
+                        `<div class="editorjs-reference" data-collection="${escapeHtml(String(data.collection || ''))}" data-item="${escapeHtml(String(data.itemId || ''))}" data-template="${escapeHtml(String(data.template || ''))}"></div>`,
+                    );
+                }
                 break;
             }
 

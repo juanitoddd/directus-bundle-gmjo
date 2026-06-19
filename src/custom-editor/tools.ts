@@ -18,6 +18,7 @@ import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
 import GridBlock from './tools/block-tools/grid-block';
 import ButtonBlock from './tools/block-tools/button-block';
+import ReferenceBlock from './tools/block-tools/reference-block';
 import { EDITOR_COLORS } from './tools/utils/colors';
 import { Flex } from './tools/tunes/flex';
 import { Grid } from './tools/tunes/grid';
@@ -34,6 +35,7 @@ export interface UploaderConfig {
     setCurrentPreview?: (url: string) => void;
     getUploadFieldElement: () => any;
     openFlexEditor?: (params: { data?: any; callback: (item: any) => void }) => void;
+    api?: any;
 }
 
 export default function getTools(
@@ -181,6 +183,14 @@ export default function getTools(
             inlineToolbar: ['ColorPicker', 'WeightPicker', 'FontFamilyPicker', 'FontSizePicker', 'underline', 'italic'],
             config: {
                 colors: EDITOR_COLORS,
+            },
+            tunes: ['alignment', 'spacing'],
+        },
+        reference: {
+            class: ReferenceBlock,
+            config: {
+                api: uploaderConfig.api,
+                baseURL: uploaderConfig.baseURL,
             },
             tunes: ['alignment', 'spacing'],
         },

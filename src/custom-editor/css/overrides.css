@@ -351,6 +351,78 @@
 	color: var(--theme--primary, #0d6efd);
 }
 
+/* Reference block */
+.codex-editor .ce-reference-block {
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	padding: 0.75rem;
+}
+
+/* Reference settings panel ("reference tune") */
+.ce-reference-tune {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 0.5rem;
+	min-width: 240px;
+}
+
+.ce-reference-tune .ce-reference-block__search {
+	display: none;
+}
+
+.ce-reference-block__select,
+.ce-reference-block__input {
+	width: 100%;
+	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--form--field--input--background);
+	color: var(--theme--form--field--input--foreground);
+}
+
+.ce-reference-block__results {
+	margin-top: 0.35rem;
+	background: var(--theme--background);
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	max-height: 14rem;
+	overflow-y: auto;
+}
+
+.ce-reference-block__results:empty {
+	display: none;
+	border: none;
+}
+
+.ce-reference-block__result {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 0.4rem 0.6rem;
+	border: none;
+	background: none;
+	color: var(--theme--form--field--input--foreground);
+	cursor: pointer;
+}
+
+.ce-reference-block__result:hover {
+	background: var(--theme--background-accent);
+}
+
+.ce-reference-block__result.is-empty {
+	color: var(--theme--form--field--input--foreground-subdued);
+	cursor: default;
+}
+
+.codex-editor .ce-reference-block__preview:empty {
+	display: none;
+}
+
+.codex-editor .ce-reference-block__hint {
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
 /* Button block */
 .codex-editor .ce-button-block {
 	padding: 0.25rem 0;

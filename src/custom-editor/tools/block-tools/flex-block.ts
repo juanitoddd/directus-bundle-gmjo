@@ -1,6 +1,7 @@
 import type { BlockToolConstructorOptions } from '@editorjs/editorjs';
 import { IconPlus } from '@codexteam/icons';
-import { blocksToHtml } from '../utils/block-utils';
+import { blocksToHtml, referenceKey } from '../utils/block-utils';
+import { collectReferences, resolveReferences } from '../utils/reference-resolver';
 
 interface FlexBlockItem {
 	id: string;
@@ -22,6 +23,10 @@ export default class FlexBlock {
 	private openFlexEditor: ((params: { data?: any; callback: (item: any) => void }) => void) | null = null;
 	private preview: HTMLElement | null = null;
 	private block: any;
+	private referencesCache: Record<string, string> = {};
+	private refsAttempted = new Set<string>();
+	private resolvingRefs = false;
+	private defaultLanguage: string | undefined;
 
 	static get toolbox() {
 		return {
@@ -134,7 +139,7 @@ export default class FlexBlock {
 
 			const richPreview = document.createElement('div');
 			richPreview.classList.add('ce-flex-block__item-rich-preview');
-			const html = blocksToHtml(item.content?.blocks || []);
+			const html = blocksToHtml(item.content?.blocks || [], { references: this.referencesCache });
 			richPreview.innerHTML = html || '<em>empty</em>';
 			itemElement.appendChild(richPreview);
 
@@ -189,6 +194,57 @@ export default class FlexBlock {
 			itemElement.appendChild(controls);
 			preview.appendChild(itemElement);
 		});
+
+		this.ensureReferences();
+	}
+
+	/**
+	 * Resolve any reference blocks nested in the cells (fetch + interpolate) and
+	 * re-render the preview with their HTML. Guards prevent refetch/loop.
+	 */
+	private async ensureReferences() {
+		const api = this.config?.uploader?.api;
+		if (!api || this.resolvingRefs) return;
+
+		const allBlocks: any[] = [];
+		for (const item of this.data.items) {
+			const blocks = item?.content?.blocks;
+			if (Array.isArray(blocks)) allBlocks.push(...blocks);
+		}
+
+		const needed = collectReferences(allBlocks).map((r) => referenceKey(r.collection, r.itemId, r.template));
+		if (!needed.some((key) => !this.refsAttempted.has(key))) return;
+
+		this.resolvingRefs = true;
+		try {
+			if (this.defaultLanguage === undefined) {
+				try {
+					const res = await api.get('/settings', { params: { fields: ['default_language'] } });
+					this.defaultLanguage = res?.data?.data?.default_language || '';
+				} catch (e) {
+					this.defaultLanguage = '';
+				}
+			}
+
+			const map = await resolveReferences(allBlocks, {
+				api,
+				assetBaseUrl: this.config?.uploader?.baseURL || '',
+				language: this.defaultLanguage,
+			});
+
+			let changed = false;
+			for (const [key, value] of Object.entries(map)) {
+				if (this.referencesCache[key] !== value) {
+					this.referencesCache[key] = value;
+					changed = true;
+				}
+			}
+			for (const key of needed) this.refsAttempted.add(key);
+
+			if (changed) this.renderPreview();
+		} finally {
+			this.resolvingRefs = false;
+		}
 	}
 
 	save() {
