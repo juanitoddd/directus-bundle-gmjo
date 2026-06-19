@@ -137,22 +137,22 @@ export default class ButtonBlock {
 			{
 				icon: colorSwatchIcon(this.data.color || 'transparent'),
 				title: 'Text color',
-				children: { searchable: false, items: this.colorItems(this.data.color, (c) => this.setColor('color', c)) },
+				children: { searchable: false, items: this.colorItems(this.data.color, (c, commit) => this.setColor('color', c, commit)) },
 			},
 			{
 				icon: colorSwatchIcon(this.data.background || 'transparent'),
 				title: 'Background',
-				children: { searchable: false, items: this.colorItems(this.data.background, (c) => this.setColor('background', c)) },
+				children: { searchable: false, items: this.colorItems(this.data.background, (c, commit) => this.setColor('background', c, commit)) },
 			},
 			{
 				icon: colorSwatchIcon(this.data.hoverBackground || 'transparent'),
 				title: 'Hover color',
-				children: { searchable: false, items: this.colorItems(this.data.hoverBackground, (c) => this.setColor('hoverBackground', c)) },
+				children: { searchable: false, items: this.colorItems(this.data.hoverBackground, (c, commit) => this.setColor('hoverBackground', c, commit)) },
 			},
 			{
 				icon: BORDER_ICON,
 				title: 'Border',
-				children: { searchable: false, items: this.colorItems(this.data.borderColor, (c) => this.setColor('borderColor', c)) },
+				children: { searchable: false, items: this.colorItems(this.data.borderColor, (c, commit) => this.setColor('borderColor', c, commit)) },
 			},
 			{
 				icon: SIZE_ICON,
@@ -170,28 +170,79 @@ export default class ButtonBlock {
 		] as MenuConfig;
 	}
 
-	private colorItems(current: string | undefined, onPick: (color?: string) => void): any[] {
+	private colorItems(current: string | undefined, onPick: (color?: string, commit?: boolean) => void): any[] {
 		const items: any[] = [
+			{ type: 'html', element: this.createColorInput(current, onPick) },
 			{
 				title: 'None',
 				isActive: !current,
 				closeOnActivate: true,
-				onActivate: () => onPick(undefined),
+				onActivate: () => onPick(undefined, true),
 			},
 		];
 
 		for (const color of this.colors) {
 			items.push({
 				icon: colorSwatchIcon(color),
-				title: '',
+				title: color,
 				name: `btn-swatch-${color}`,
 				isActive: current === color,
 				closeOnActivate: true,
-				onActivate: () => onPick(color),
+				onActivate: () => onPick(color, true),
 			});
 		}
 
 		return items;
+	}
+
+	/** Coerce a color value to the `#rrggbb` form the native picker requires. */
+	private toHexColor(value: string | undefined): string {
+		if (!value) return '#000000';
+		const trimmed = value.trim();
+		const short = /^#([0-9a-fA-F]{3})$/.exec(trimmed);
+		if (short) {
+			const [r, g, b] = short[1].split('');
+			return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+		}
+		return /^#([0-9a-fA-F]{6})$/.test(trimmed) ? trimmed.toLowerCase() : '#000000';
+	}
+
+	private createColorInput(current: string | undefined, onPick: (color?: string, commit?: boolean) => void): HTMLElement {
+		const wrap = document.createElement('div');
+		wrap.classList.add('ce-button-settings', 'ce-color-input-row');
+
+		const picker = document.createElement('input');
+		picker.type = 'color';
+		picker.classList.add('ce-color-input-row__picker');
+		picker.value = this.toHexColor(current);
+
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.classList.add('ce-tune__input');
+		input.placeholder = '#rrggbb / rgb() / var()';
+		input.value = current || '';
+
+		const isHex = (v: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v);
+
+		// Live preview while interacting (no commit); commit on change/blur.
+		picker.addEventListener('input', () => {
+			input.value = picker.value;
+			onPick(picker.value, false);
+		});
+		picker.addEventListener('change', () => onPick(picker.value, true));
+
+		input.addEventListener('keydown', (event) => event.stopPropagation());
+		input.addEventListener('input', () => {
+			const value = input.value.trim();
+			// Keep the picker in sync only for hex values it can represent.
+			if (isHex(value)) picker.value = this.toHexColor(value);
+			onPick(value || undefined, false);
+		});
+		input.addEventListener('change', () => onPick(input.value.trim() || undefined, true));
+
+		wrap.appendChild(picker);
+		wrap.appendChild(input);
+		return wrap;
 	}
 
 	private createHrefInput(): HTMLElement {
@@ -204,11 +255,13 @@ export default class ButtonBlock {
 		input.placeholder = 'https://…';
 		input.value = this.data.href || '';
 		input.addEventListener('keydown', (event) => event.stopPropagation());
+		// Update data live while typing, but commit (which re-renders the block)
+		// only on change/blur — otherwise the popover input is destroyed mid-typing.
 		input.addEventListener('input', () => {
 			this.data.href = input.value.trim();
 			this.link?.setAttribute('href', this.data.href || '#');
-			this.block?.dispatchChange();
 		});
+		input.addEventListener('change', () => this.block?.dispatchChange());
 
 		wrap.appendChild(input);
 		return wrap;
@@ -219,10 +272,13 @@ export default class ButtonBlock {
 		this.block?.dispatchChange();
 	}
 
-	private setColor(key: 'color' | 'background' | 'hoverBackground' | 'borderColor', color?: string) {
+	private setColor(key: 'color' | 'background' | 'hoverBackground' | 'borderColor', color?: string, commit = true) {
 		this.data[key] = color;
 		this.applyStyles();
-		this.block?.dispatchChange();
+		// Only commit (which triggers the editor save/re-render pipeline) on
+		// discrete actions — not on every keystroke, which would re-render the
+		// block and destroy the open popover input mid-typing.
+		if (commit) this.block?.dispatchChange();
 	}
 
 	private setSize(size: ButtonSize) {
@@ -232,6 +288,11 @@ export default class ButtonBlock {
 	}
 
 	save(): ButtonBlockData {
+		// Read the live label HTML at save time: inline tools mutate the DOM
+		// without firing an `input` event, so the cached value can be stale.
+		if (this.link) {
+			this.data.text = this.link.innerHTML;
+		}
 		return this.data;
 	}
 }

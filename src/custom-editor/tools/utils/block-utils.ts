@@ -200,9 +200,12 @@ export function blocksToHtml(blocks: any[] | undefined): string {
                 if (data.color) styleRules.push(`color: ${escapeHtml(String(data.color))}`);
                 if (data.background) styleRules.push(`background-color: ${escapeHtml(String(data.background))}`);
                 if (data.borderColor) styleRules.push(`border: 1px solid ${escapeHtml(String(data.borderColor))}`);
-                // Hover background is exposed as a CSS var; the front-end needs a
-                // rule like `.editorjs-button:hover { background: var(--btn-hover-bg) }`.
-                if (data.hoverBackground) styleRules.push(`--btn-hover-bg: ${escapeHtml(String(data.hoverBackground))}`);
+                // Hover background is exposed as a CSS var (the front-end needs a
+                // rule like `.editorjs-button:hover { background: var(--btn-hover-bg) }`).
+                // Default it to the base background so hover never goes transparent
+                // when no explicit hover color is set.
+                const hoverBg = data.hoverBackground || data.background;
+                if (hoverBg) styleRules.push(`--btn-hover-bg: ${escapeHtml(String(hoverBg))}`);
 
                 blockParts.push(
                     `<a class="editorjs-button" href="${href}" target="${target}"${rel} style="${styleRules.join('; ')}">${text}</a>`,

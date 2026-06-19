@@ -370,6 +370,28 @@
 	min-width: 180px;
 }
 
+.ce-color-input-row {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.ce-color-input-row .ce-tune__input {
+	flex: 1;
+	min-width: 0;
+}
+
+.ce-color-input-row__picker {
+	width: 28px;
+	height: 28px;
+	flex: 0 0 auto;
+	padding: 0;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: none;
+	cursor: pointer;
+}
+
 /* Generic tune text input (e.g. flex/grid gap) */
 .ce-tune__input {
 	width: 100%;
