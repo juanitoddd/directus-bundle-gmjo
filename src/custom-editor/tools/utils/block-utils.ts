@@ -63,7 +63,12 @@ export function collectTemplatePaths(blocks: any[] | undefined): string[] {
         PLACEHOLDER_RE.lastIndex = 0;
         // eslint-disable-next-line no-cond-assign
         while ((match = PLACEHOLDER_RE.exec(str)) !== null) {
-            paths.add(match[1].trim());
+            let raw = match[1].trim();
+            // For structured image tokens, only the field part is a real path.
+            if (raw.startsWith('image:')) {
+                raw = raw.slice('image:'.length).split(',')[0].trim();
+            }
+            if (raw) paths.add(raw);
         }
     };
 
@@ -110,16 +115,66 @@ export function interpolateTemplate(
         return String(value);
     };
 
+    // Resolve a file field to an asset URL whether it comes back expanded
+    // (object) or as a bare UUID string.
+    const fileSrc = (value: any): string => {
+        if (isFileObject(value)) return assetUrl(value);
+        if (value && typeof value === 'object' && value.id != null) return assetUrl(value);
+        if (typeof value === 'string' && value) return `${base}assets/${value}`;
+        return '';
+    };
+
+    // Structured image token: image:<field>, alt="…", link="…", maxWidth="…", maxHeight="…"
+    const renderImageToken = (content: string): string => {
+        const body = content.slice('image:'.length);
+        const commaIdx = body.indexOf(',');
+        const field = (commaIdx === -1 ? body : body.slice(0, commaIdx)).trim();
+        const attrStr = commaIdx === -1 ? '' : body.slice(commaIdx + 1);
+
+        const attrs: Record<string, string> = {};
+        const attrRe = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+        let m: RegExpExecArray | null;
+        // eslint-disable-next-line no-cond-assign
+        while ((m = attrRe.exec(attrStr)) !== null) {
+            attrs[m[1].toLowerCase()] = m[2] !== undefined ? m[2] : m[3];
+        }
+
+        const src = fileSrc(resolvePath(item, field, language));
+        if (!src) return '';
+
+        const styleMap: [string, string][] = [
+            ['maxwidth', 'max-width'],
+            ['maxheight', 'max-height'],
+            ['width', 'width'],
+            ['height', 'height'],
+        ];
+        const styles = styleMap
+            .filter(([key]) => attrs[key])
+            .map(([key, css]) => `${css}: ${attrs[key]}`);
+        const styleAttr = styles.length ? ` style="${escapeHtml(styles.join('; '))}"` : '';
+
+        const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(attrs.alt || '')}"${styleAttr} />`;
+
+        const link = attrs.link ? attrs.link.trim() : '';
+        return link
+            ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${img}</a>`
+            : img;
+    };
+
     const interpolateString = (str: string): string => {
-        // Whole-field single file placeholder → render an <img>.
+        // Whole-field single bare file placeholder → render a plain <img>.
         const single = str.trim().match(/^\{\{\s*([^}]+?)\s*\}\}$/);
-        if (single) {
+        if (single && !single[1].trim().startsWith('image:')) {
             const value = resolvePath(item, single[1].trim(), language);
             if (isFileObject(value)) {
                 return `<img src="${assetUrl(value)}" alt="" />`;
             }
         }
-        return str.replace(PLACEHOLDER_RE, (_m, path) => tokenValue(String(path).trim()));
+        return str.replace(PLACEHOLDER_RE, (_m, raw) => {
+            const content = String(raw).trim();
+            if (content.startsWith('image:')) return renderImageToken(content);
+            return tokenValue(content);
+        });
     };
 
     const walk = (value: any): any => {
