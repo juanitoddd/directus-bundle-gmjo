@@ -423,6 +423,112 @@
 	color: var(--theme--form--field--input--foreground-subdued);
 }
 
+/* Collection block */
+.codex-editor .ce-collection-block {
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	padding: 0.75rem;
+}
+
+.codex-editor .ce-collection-block__hint {
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+.codex-editor .editorjs-collection {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+/* Collection settings panel ("collection tune") */
+.ce-collection-tune {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 0.5rem;
+	width: 420px;
+	max-width: 92vw;
+}
+
+/* Let the block-settings popover grow for the (wide) collection tune only. */
+.ce-popover__container:has(.ce-collection-tune) {
+	width: auto;
+	max-width: 92vw;
+}
+
+.ce-popover__container:has(.ce-collection-tune) .ce-popover__items {
+	width: auto;
+}
+
+.ce-collection-tune__field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.ce-collection-tune__label {
+	font-size: 0.75rem;
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+.ce-collection-tune__sort {
+	display: flex;
+	gap: 0.35rem;
+}
+
+.ce-collection-tune__sort .ce-reference-block__select {
+	flex: 1;
+}
+
+.ce-collection-tune__dir,
+.ce-collection-tune__add {
+	padding: 0.35rem 0.6rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	cursor: pointer;
+	font-size: 0.85rem;
+}
+
+.ce-collection-tune__dir:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.ce-collection-tune__filters {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.ce-coll-filter-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr auto;
+	gap: 0.25rem;
+	align-items: center;
+}
+
+.ce-coll-filter-row__remove {
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	cursor: pointer;
+}
+
+.ce-collection-tune__layout > summary {
+	cursor: pointer;
+	font-size: 0.8rem;
+	padding: 0.35rem 0;
+	color: var(--theme--form--field--input--foreground-subdued);
+	user-select: none;
+}
+
+.ce-collection-tune__layout-holder {
+	padding-top: 0.35rem;
+}
+
 /* Button block */
 .codex-editor .ce-button-block {
 	padding: 0.25rem 0;
@@ -462,6 +568,34 @@
 	border-radius: var(--theme--border-radius);
 	background: none;
 	cursor: pointer;
+}
+
+/* Style tune */
+.ce-style-tune {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	padding: 0.4rem;
+	min-width: 200px;
+}
+
+.ce-style-tune__swatches {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+}
+
+.ce-style-tune__swatch {
+	width: 18px;
+	height: 18px;
+	border-radius: 3px;
+	border: 1px solid rgba(127, 127, 127, 0.4);
+	cursor: pointer;
+	padding: 0;
+}
+
+.ce-style-tune__swatch.is-none {
+	background: linear-gradient(to top right, transparent 45%, #c9372c 45%, #c9372c 55%, transparent 55%);
 }
 
 /* Generic tune text input (e.g. flex/grid gap) */

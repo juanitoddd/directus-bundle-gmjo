@@ -46,6 +46,7 @@ const props = withDefaults(
 			'gridblock',
 			'button',
 			'reference',
+			'collectionblock',
 		],
 		font: 'sans-serif',
 	},

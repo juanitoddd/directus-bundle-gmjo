@@ -13,12 +13,14 @@ import UnderlineTool from '@editorjs/underline';
 import ToggleBlock from 'editorjs-toggle-block';
 import { Alignment } from './tools/tunes/alignment';
 import { Spacing } from './tools/tunes/spacing';
+import { Style } from './tools/tunes/style';
 import { AttachesTool, ImageTool } from './plugins';
 import HTMLBlock from './tools/block-tools/html-block';
 import FlexBlock from './tools/block-tools/flex-block';
 import GridBlock from './tools/block-tools/grid-block';
 import ButtonBlock from './tools/block-tools/button-block';
 import ReferenceBlock from './tools/block-tools/reference-block';
+import CollectionBlock from './tools/block-tools/collection-block';
 import { EDITOR_COLORS } from './tools/utils/colors';
 import { Flex } from './tools/tunes/flex';
 import { Grid } from './tools/tunes/grid';
@@ -52,31 +54,31 @@ export default function getTools(
         header: {
             class: HeaderTool,
             inlineToolbar: inlineTools,
-            tunes: ['alignment', 'spacing'],
+            tunes: ['alignment', 'spacing', 'style'],
         },
         paragraph: {
             class: ParagraphTool,
             inlineToolbar: inlineTools,
-            tunes: ['alignment', 'spacing'],
+            tunes: ['alignment', 'spacing', 'style'],
         },
         list: {
             class: NestedListTool,
             inlineToolbar: false,
-            tunes: ['alignment', 'spacing'],
+            tunes: ['alignment', 'spacing', 'style'],
         },
         image: {
             class: ImageTool,
             config: {
                 uploader: uploaderConfig,
             },
-            tunes: ['alignment', 'spacing'],
+            tunes: ['alignment', 'spacing', 'style'],
         },
         attaches: {
             class: AttachesTool,
             config: {
                 uploader: uploaderConfig,
             },
-            tunes: ['alignment', 'spacing'],
+            tunes: ['alignment', 'spacing', 'style'],
         },
         alignment: {
             class: Alignment,
@@ -84,10 +86,13 @@ export default function getTools(
         spacing: {
             class: Spacing,
         },
+        style: {
+            class: Style,
+        },
         nestedlist: {
             class: NestedListTool,
             inlineToolbar: inlineTools,
-            tunes: ['alignment', 'spacing'],
+            tunes: ['alignment', 'spacing', 'style'],
         },
         delimiter: {
             class: DelimiterTool,
@@ -157,14 +162,14 @@ export default function getTools(
             config: {
                 uploader: uploaderConfig,
             },
-            tunes: ['flex', 'spacing'],
+            tunes: ['flex', 'spacing', 'style'],
         },
         gridblock: {
             class: GridBlock,
             config: {
                 uploader: uploaderConfig,
             },
-            tunes: ['grid', 'spacing'],
+            tunes: ['grid', 'spacing', 'style'],
         },
         flex: {
             class: Flex,
@@ -174,7 +179,7 @@ export default function getTools(
         },
         htmlblock: {
             class: HTMLBlock,
-            tunes: ['spacing'],
+            tunes: ['spacing', 'style'],
         },
         button: {
             class: ButtonBlock,
@@ -184,7 +189,7 @@ export default function getTools(
             config: {
                 colors: EDITOR_COLORS,
             },
-            tunes: ['alignment', 'spacing'],
+            tunes: ['alignment', 'spacing', 'style'],
         },
         reference: {
             class: ReferenceBlock,
@@ -192,7 +197,15 @@ export default function getTools(
                 api: uploaderConfig.api,
                 baseURL: uploaderConfig.baseURL,
             },
-            tunes: ['alignment', 'spacing'],
+            tunes: ['alignment', 'spacing', 'style'],
+        },
+        collectionblock: {
+            class: CollectionBlock,
+            config: {
+                api: uploaderConfig.api,
+                baseURL: uploaderConfig.baseURL,
+            },
+            tunes: ['alignment', 'spacing', 'style'],
         },
         // EXAMPLE (Part 4/4): add marker tool
         //     class: Marker,
@@ -216,6 +229,10 @@ export default function getTools(
 
     if (!tools.spacing && 'spacing' in defaults) {
         tools.spacing = defaults.spacing;
+    }
+
+    if (!tools.style && 'style' in defaults) {
+        tools.style = defaults.style;
     }
 
     if (!tools.format && 'format' in defaults) {

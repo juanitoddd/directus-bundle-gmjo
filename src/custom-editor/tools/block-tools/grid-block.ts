@@ -1,7 +1,7 @@
 import type { API, BlockToolConstructorOptions } from '@editorjs/editorjs';
 import type { MenuConfig } from '@editorjs/editorjs/types/tools/menu-config';
-import { blocksToHtml, referenceKey } from '../utils/block-utils';
-import { collectReferences, resolveReferences } from '../utils/reference-resolver';
+import { blocksToHtml } from '../utils/block-utils';
+import { collectResolvableKeys, resolveBlocks } from '../utils/reference-resolver';
 
 const COLUMNS_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>';
 
@@ -333,7 +333,7 @@ export default class GridBlock {
 			if (Array.isArray(blocks)) allBlocks.push(...blocks);
 		}
 
-		const needed = collectReferences(allBlocks).map((r) => referenceKey(r.collection, r.itemId, r.template));
+		const needed = collectResolvableKeys(allBlocks);
 		if (!needed.some((key) => !this.refsAttempted.has(key))) return;
 
 		this.resolvingRefs = true;
@@ -347,7 +347,7 @@ export default class GridBlock {
 				}
 			}
 
-			const map = await resolveReferences(allBlocks, {
+			const map = await resolveBlocks(allBlocks, {
 				api,
 				assetBaseUrl: this.config?.uploader?.baseURL || '',
 				language: this.defaultLanguage,

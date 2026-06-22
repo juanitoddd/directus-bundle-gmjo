@@ -1,24 +1,25 @@
-import { blocksToHtml, interpolateTemplate, deriveTemplateFields, referenceKey } from './block-utils';
+import { blocksToHtml, interpolateTemplate, deriveTemplateFields, referenceKey, collectionKey } from './block-utils';
+import { buildItemsParams, renderCollectionHtml } from './collection-query';
 
 const TEMPLATES_COLLECTION = 'display_templates';
 
+/** Map a collection key to its REST endpoint (system collections differ). */
 function itemsEndpoint(collection: string): string {
 	return collection.startsWith('directus_')
 		? `/${collection.slice('directus_'.length)}`
 		: `/items/${collection}`;
 }
 
-export interface RefDescriptor {
-	collection: string;
-	itemId: any;
-	template: string;
-}
+type Resolvable =
+	| { kind: 'reference'; key: string; collection: string; itemId: any; template: string }
+	| { kind: 'collection'; key: string; collection: string; template: string; data: any };
 
 /**
- * Recursively collect every reference block (incl. inside flex/grid cells).
+ * Recursively collect resolvable blocks (reference + collection), including
+ * those nested inside flex/grid cells.
  */
-export function collectReferences(blocks: any[] | undefined): RefDescriptor[] {
-	const out: RefDescriptor[] = [];
+function collectResolvables(blocks: any[] | undefined): Resolvable[] {
+	const out: Resolvable[] = [];
 
 	const scan = (arr: any[]) => {
 		if (!Array.isArray(arr)) return;
@@ -27,7 +28,21 @@ export function collectReferences(blocks: any[] | undefined): RefDescriptor[] {
 			const data = block.data || {};
 
 			if (block.type === 'reference' && data.collection && data.itemId != null) {
-				out.push({ collection: data.collection, itemId: data.itemId, template: data.template || '' });
+				out.push({
+					kind: 'reference',
+					key: referenceKey(data.collection, data.itemId, data.template),
+					collection: data.collection,
+					itemId: data.itemId,
+					template: data.template || '',
+				});
+			} else if (block.type === 'collectionblock' && data.collection && data.template) {
+				out.push({
+					kind: 'collection',
+					key: collectionKey(data),
+					collection: data.collection,
+					template: data.template,
+					data,
+				});
 			}
 
 			if (Array.isArray(data.items)) {
@@ -43,11 +58,16 @@ export function collectReferences(blocks: any[] | undefined): RefDescriptor[] {
 	return out;
 }
 
+/** All resolvable keys present in `blocks` (for "is anything missing?" checks). */
+export function collectResolvableKeys(blocks: any[] | undefined): string[] {
+	return collectResolvables(blocks).map((r) => r.key);
+}
+
 /**
- * Fetch + interpolate every reference found in `blocks` and return a map of
- * `referenceKey` → resolved HTML, suitable for `blocksToHtml(blocks, { references })`.
+ * Fetch + render every reference and collection block found in `blocks`,
+ * returning a map of key → resolved HTML for `blocksToHtml(blocks, { references })`.
  */
-export async function resolveReferences(
+export async function resolveBlocks(
 	blocks: any[] | undefined,
 	options: { api: any; assetBaseUrl?: string; language?: string },
 ): Promise<Record<string, string>> {
@@ -58,35 +78,44 @@ export async function resolveReferences(
 	const templateCache: Record<string, any[] | null> = {};
 	const seen = new Set<string>();
 
-	for (const ref of collectReferences(blocks)) {
-		const key = referenceKey(ref.collection, ref.itemId, ref.template);
-		if (seen.has(key)) continue;
-		seen.add(key);
+	const getTemplate = async (collection: string, name: string): Promise<any[] | null> => {
+		const cacheKey = `${collection}:${name}`;
+		if (templateCache[cacheKey] !== undefined) return templateCache[cacheKey];
+		const res = await api.get(`/items/${TEMPLATES_COLLECTION}`, {
+			params: { filter: { collection: { _eq: collection }, name: { _eq: name } }, fields: ['template'], limit: 1 },
+		});
+		const tpl = res?.data?.data?.[0]?.template?.blocks || null;
+		templateCache[cacheKey] = tpl;
+		return tpl;
+	};
+
+	for (const ref of collectResolvables(blocks)) {
+		if (seen.has(ref.key)) continue;
+		seen.add(ref.key);
 
 		try {
-			const cacheKey = `${ref.collection}:${ref.template}`;
-			let template = templateCache[cacheKey];
-			if (template === undefined) {
-				const tplRes = await api.get(`/items/${TEMPLATES_COLLECTION}`, {
-					params: {
-						filter: { collection: { _eq: ref.collection }, name: { _eq: ref.template } },
-						fields: ['template'],
-						limit: 1,
-					},
-				});
-				template = tplRes?.data?.data?.[0]?.template?.blocks || null;
-				templateCache[cacheKey] = template;
-			}
+			const template = await getTemplate(ref.collection, ref.template);
 			if (!template || !template.length) continue;
 
-			const itemRes = await api.get(`${itemsEndpoint(ref.collection)}/${ref.itemId}`, {
-				params: { fields: deriveTemplateFields(template) },
-			});
-			const item = itemRes?.data?.data;
-
-			map[key] = blocksToHtml(interpolateTemplate(template, item, { assetBaseUrl, language }));
+			if (ref.kind === 'reference') {
+				const itemRes = await api.get(`${itemsEndpoint(ref.collection)}/${ref.itemId}`, {
+					params: { fields: deriveTemplateFields(template) },
+				});
+				map[ref.key] = blocksToHtml(interpolateTemplate(template, itemRes?.data?.data, { assetBaseUrl, language }));
+			} else {
+				const params = buildItemsParams(
+					{ filters: ref.data.filters || [], sort: ref.data.sort || null, limit: ref.data.limit || 0 },
+					template,
+				);
+				const itemsRes = await api.get(itemsEndpoint(ref.collection), { params });
+				map[ref.key] = renderCollectionHtml(itemsRes?.data?.data || [], template, {
+					assetBaseUrl,
+					language,
+					container: ref.data.container,
+				});
+			}
 		} catch (e) {
-			// Leave unresolved references as placeholders.
+			// Leave unresolved blocks as placeholders.
 		}
 	}
 

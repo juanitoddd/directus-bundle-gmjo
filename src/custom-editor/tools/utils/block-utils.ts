@@ -228,6 +228,17 @@ export function referenceKey(collection: any, itemId: any, template?: any): stri
     return `${collection ?? ''}:${itemId ?? ''}:${template ?? ''}`;
 }
 
+/** Key for a resolved collection block (collection + template + query). */
+export function collectionKey(data: any): string {
+    const query = {
+        filters: data?.filters || [],
+        sort: data?.sort || null,
+        limit: data?.limit || 0,
+        container: data?.container || null,
+    };
+    return `coll:${data?.collection ?? ''}:${data?.template ?? ''}:${JSON.stringify(query)}`;
+}
+
 export interface BlocksToHtmlOptions {
     /**
      * Pre-resolved reference HTML keyed by `referenceKey(collection, itemId)`.
@@ -438,6 +449,22 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                 break;
             }
 
+            case 'collectionblock': {
+                // Live collection: many items fetched by filter/sort/limit at render
+                // time. Inline pre-resolved HTML if present; else a hydration
+                // placeholder carrying the query for the front-end.
+                const resolved = options.references?.[collectionKey(data)];
+                if (resolved != null) {
+                    blockParts.push(resolved);
+                } else {
+                    const query = JSON.stringify({ filters: data.filters || [], sort: data.sort || null, limit: data.limit || 0 });
+                    blockParts.push(
+                        `<div class="editorjs-collection" data-collection="${escapeHtml(String(data.collection || ''))}" data-template="${escapeHtml(String(data.template || ''))}" data-query="${escapeHtml(query)}"></div>`,
+                    );
+                }
+                break;
+            }
+
             default:
                 // Fallback: render a small representation
                 try {
@@ -469,6 +496,18 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                 const margin = spacing.margin?.[side];
                 if (margin) styleRules.push(`margin-${side}: ${escapeHtml(String(margin))}`);
             }
+        }
+
+        // Style: background, border, radius.
+        const styleTune = block.tunes?.style;
+        if (styleTune) {
+            if (styleTune.background) styleRules.push(`background-color: ${escapeHtml(String(styleTune.background))}`);
+            if (styleTune.borderStyle && styleTune.borderStyle !== 'none') {
+                const width = escapeHtml(String(styleTune.borderWidth || '1px'));
+                const color = escapeHtml(String(styleTune.borderColor || '#000'));
+                styleRules.push(`border: ${width} ${escapeHtml(String(styleTune.borderStyle))} ${color}`);
+            }
+            if (styleTune.borderRadius) styleRules.push(`border-radius: ${escapeHtml(String(styleTune.borderRadius))}`);
         }
 
         let blockHtml = blockParts.join('');
