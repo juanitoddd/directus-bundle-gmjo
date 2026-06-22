@@ -12,6 +12,7 @@ interface SpacingData {
 }
 
 const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
+const DEFAULT_SPACING = '0.75rem';
 
 const PADDING_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1" stroke-dasharray="2 2"/></svg>';
 const MARGIN_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="2 2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>';
@@ -23,13 +24,11 @@ const BOXES: { key: BoxKind; label: string; icon: string }[] = [
 
 function sanitizeBox(value: unknown): BoxValues {
 	const out: BoxValues = {};
-	if (value && typeof value === 'object') {
-		for (const side of SIDES) {
-			const raw = (value as Record<string, unknown>)[side];
-			if (typeof raw === 'string' && raw.trim()) {
-				out[side] = raw.trim();
-			}
-		}
+	const source = (value && typeof value === 'object') ? (value as Record<string, unknown>) : {};
+	for (const side of SIDES) {
+		const raw = source[side];
+		// Default every side to 0.75rem so the inputs always show a value on open.
+		out[side] = (typeof raw === 'string' && raw.trim()) ? raw.trim() : DEFAULT_SPACING;
 	}
 	return out;
 }
