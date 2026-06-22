@@ -13,6 +13,9 @@ interface SpacingData {
 
 const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
 const DEFAULT_SPACING = '0.75rem';
+const ZERO_SPACING = '0';
+// Only layout containers get spacing by default; everything else starts at 0.
+const SPACED_BLOCKS = new Set(['flexblock', 'gridblock']);
 
 const PADDING_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1" stroke-dasharray="2 2"/></svg>';
 const MARGIN_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="2 2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>';
@@ -22,13 +25,13 @@ const BOXES: { key: BoxKind; label: string; icon: string }[] = [
 	{ key: 'margin', label: 'Margin', icon: MARGIN_ICON },
 ];
 
-function sanitizeBox(value: unknown): BoxValues {
+function sanitizeBox(value: unknown, fallback: string): BoxValues {
 	const out: BoxValues = {};
 	const source = (value && typeof value === 'object') ? (value as Record<string, unknown>) : {};
 	for (const side of SIDES) {
 		const raw = source[side];
-		// Default every side to 0.75rem so the inputs always show a value on open.
-		out[side] = (typeof raw === 'string' && raw.trim()) ? raw.trim() : DEFAULT_SPACING;
+		// Missing sides take the block-type default so inputs always show a value.
+		out[side] = (typeof raw === 'string' && raw.trim()) ? raw.trim() : fallback;
 	}
 	return out;
 }
@@ -42,9 +45,10 @@ export class Spacing implements BlockTune {
 	constructor({ api, data, block }: BlockToolConstructorOptions) {
 		this.api = api;
 		this.block = block;
+		const fallback = SPACED_BLOCKS.has((block as any)?.name) ? DEFAULT_SPACING : ZERO_SPACING;
 		this.data = {
-			padding: sanitizeBox((data as Partial<SpacingData> | undefined)?.padding),
-			margin: sanitizeBox((data as Partial<SpacingData> | undefined)?.margin),
+			padding: sanitizeBox((data as Partial<SpacingData> | undefined)?.padding, fallback),
+			margin: sanitizeBox((data as Partial<SpacingData> | undefined)?.margin, fallback),
 		};
 	}
 
