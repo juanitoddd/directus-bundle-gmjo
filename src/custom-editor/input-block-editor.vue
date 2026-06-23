@@ -4,7 +4,7 @@ import { useApi, useStores } from '@directus/extensions-sdk';
 // CORE-CHANGE end
 import EditorJS from '@editorjs/editorjs';
 import { cloneDeep, isEqual } from 'lodash';
-import { onMounted, onUnmounted, nextTick, ref, watch } from 'vue';
+import { onMounted, onUnmounted, nextTick, ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useBus } from './bus';
@@ -213,6 +213,12 @@ const nestedTools = { ...tools };
 delete (nestedTools as Record<string, unknown>).flexblock;
 delete (nestedTools as Record<string, unknown>).gridblock;
 
+// Edit drawer z-index = 2000 + depth*20. Keep the upload drawer above the
+// deepest open edit drawer so it never appears behind a nested editor.
+const FLEX_DRAWER_BASE_Z = 2000;
+const FLEX_DRAWER_STEP_Z = 20;
+const uploadZIndex = computed(() => FLEX_DRAWER_BASE_Z + (flexStackIds.value.length + 1) * FLEX_DRAWER_STEP_Z + 40);
+
 bus.on(async (event) => {
 	if (event.type === 'open-url') {
 		router.push(event.payload);
@@ -358,7 +364,7 @@ function sanitizeValue(value: any): EditorJS.OutputData | null {
 			v-for="(id, index) in flexStackIds" :key="id"
 			v-show="!disabled" :model-value="true" icon="edit"
 			:title="`${t('Flex Item')} · level ${index + 1}`" cancelable
-			:style="{ zIndex: 2000 + index * 20 }"
+			:style="{ zIndex: FLEX_DRAWER_BASE_Z + index * FLEX_DRAWER_STEP_Z }"
 			@update:model-value="(v: boolean) => { if (!v) popFlexDrawer(id); }"
 			@cancel="popFlexDrawer(id)"
 		>
@@ -372,10 +378,10 @@ function sanitizeValue(value: any): EditorJS.OutputData | null {
 		</v-drawer>
 
 		<v-drawer
-			v-if="haveFilesAccess && !disabled" :model-value="fileHandler !== null" icon="image"
+			v-if="haveFilesAccess && !disabled && fileHandler !== null" :model-value="true" icon="image"
 			:title="t('upload_from_device')" cancelable @update:model-value="unsetFileHandler"
 			@cancel="unsetFileHandler"
-			style="z-index: 2100;"
+			:style="{ zIndex: uploadZIndex }"
 		>
 			<div class="uploader-drawer-content">
 				<div v-if="currentPreview" class="uploader-preview-image">
