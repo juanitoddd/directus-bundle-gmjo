@@ -76,12 +76,20 @@ const uploaderComponentElement = ref<HTMLElement>();
 const editorElement = ref<HTMLElement>();
 const haveFilesAccess = Boolean(collectionStore.getCollection('directus_files'));
 const haveValuesChanged = ref(false);
-const flexEditorjsRef = ref<EditorJS>();
-const flexEditorjsIsReady = ref(false);
-const flexEditorElement = ref<HTMLElement>();
-const flexEditorData = ref<EditorJS.OutputData | null>(null);
-const flexEditorOpen = ref(false);
-const flexEditorCallback = ref<((item: any) => void) | null>(null);
+// Nested rich-content drawers (a flex/grid cell can itself contain flex/grid
+// blocks). We keep a stack of drawers, each with its own EditorJS instance.
+interface FlexDrawerEntry {
+	id: number;
+	data: EditorJS.OutputData | null;
+	callback: (item: any) => void;
+	editor?: EditorJS;
+	ready: boolean;
+}
+const MAX_FLEX_DEPTH = 3;
+const flexStackIds = ref<number[]>([]);
+const flexEntries = new Map<number, FlexDrawerEntry>();
+const flexHolders = new Map<number, HTMLElement>();
+let flexDrawerCounter = 0;
 const router = useRouter();
 
 // CORE-CHANGE start
@@ -90,80 +98,101 @@ const api = useApi();
 // CORE-CHANGE end
 
 function openFlexItemEditor(params: { data?: EditorJS.OutputData | null; callback: (item: any) => void }) {
-	flexEditorData.value = params.data || null;
-	flexEditorCallback.value = params.callback;
-	flexEditorOpen.value = true;
-}
-
-async function createFlexEditor() {
-	await nextTick();
-	if (!flexEditorElement.value) return;
-
-	if (!flexEditorjsRef.value) {
-		flexEditorjsRef.value = new EditorJS({
-			holder: flexEditorElement.value,
-			readOnly: false,			
-			minHeight: 200,
-			onChange: () => {},
-			tools,
-		});
-
-		await flexEditorjsRef.value.isReady;
-		flexEditorjsIsReady.value = true;
+	if (flexStackIds.value.length >= MAX_FLEX_DEPTH) {
+		unexpectedError(new Error(`Maximum nesting depth (${MAX_FLEX_DEPTH}) reached.`));
+		return;
 	}
+	const id = ++flexDrawerCounter;
+	flexEntries.set(id, { id, data: params.data || null, callback: params.callback, ready: false });
+	flexStackIds.value = [...flexStackIds.value, id];
+}
 
-	if (flexEditorData.value) {
-		await flexEditorjsRef.value.render(flexEditorData.value);
-	} else {
-		flexEditorjsRef.value.clear();
+function setFlexHolder(id: number, el: Element | null) {
+	if (el) flexHolders.set(id, el as HTMLElement);
+	else flexHolders.delete(id);
+}
+
+async function popFlexDrawer(id: number) {
+	const index = flexStackIds.value.indexOf(id);
+	if (index === -1) return;
+
+	// Close this drawer and any deeper ones above it.
+	const removed = flexStackIds.value.slice(index);
+	flexStackIds.value = flexStackIds.value.slice(0, index);
+
+	for (const removedId of removed) {
+		const entry = flexEntries.get(removedId);
+		try {
+			await entry?.editor?.destroy();
+		}
+		catch (error) {
+			// ignore
+		}
+		flexEntries.delete(removedId);
+		flexHolders.delete(removedId);
 	}
 }
 
-async function destroyFlexEditor() {
-	if (flexEditorjsRef.value) {
-		await flexEditorjsRef.value.destroy();
-		flexEditorjsRef.value = undefined;
-	}
-	flexEditorjsIsReady.value = false;
-}
-
-function cancelFlexEditor() {
-	flexEditorOpen.value = false;
-	flexEditorCallback.value = null;
-	flexEditorData.value = null;
-}
-
-function onFlexDrawerUpdate(value: boolean) {
-	if (!value) cancelFlexEditor();
-}
-
-async function confirmFlexEditor() {
-	if (!flexEditorjsRef.value || !flexEditorjsIsReady.value) return;
+async function confirmFlexDrawer(id: number) {
+	const entry = flexEntries.get(id);
+	if (!entry || !entry.editor || !entry.ready) return;
 
 	try {
-		const result = await flexEditorjsRef.value.saver.save();
-		if (flexEditorCallback.value) {
-			flexEditorCallback.value({
-				type: 'rich',
-				content: result,
-			});
-		}
+		const result = await entry.editor.saver.save();
+		entry.callback({ type: 'rich', content: result });
 	}
 	catch (error) {
 		unexpectedError(error);
 	}
 	finally {
-		cancelFlexEditor();
+		await popFlexDrawer(id);
 	}
 }
 
-watch(flexEditorOpen, async (open) => {
-	if (open) {
-		await createFlexEditor();
+// Instantiate a nested EditorJS for each newly pushed drawer.
+watch(() => flexStackIds.value.length, async (len, prev) => {
+	if (len <= prev) return;
+	await nextTick();
+
+	const id = flexStackIds.value[len - 1];
+	const entry = flexEntries.get(id);
+	const holder = flexHolders.get(id);
+	if (!entry || entry.editor || !holder) return;
+
+	// The deepest allowed level uses a tools set without flex/grid blocks.
+	const drawerTools = len >= MAX_FLEX_DEPTH ? nestedTools : tools;
+
+	entry.editor = new EditorJS({
+		holder,
+		readOnly: false,
+		minHeight: 200,
+		onChange: () => {},
+		tools: drawerTools,
+	});
+
+	await entry.editor.isReady;
+	entry.ready = true;
+
+	if (entry.data) {
+		await entry.editor.render(entry.data);
 	} else {
-		await destroyFlexEditor();
+		entry.editor.clear();
 	}
 });
+
+async function destroyAllFlexDrawers() {
+	for (const entry of flexEntries.values()) {
+		try {
+			await entry.editor?.destroy();
+		}
+		catch (error) {
+			// ignore
+		}
+	}
+	flexEntries.clear();
+	flexHolders.clear();
+	flexStackIds.value = [];
+}
 
 const tools = getTools(
 	{
@@ -177,6 +206,12 @@ const tools = getTools(
 	props.tools,
 	haveFilesAccess,
 );
+
+// Tools for the deepest nested drawer: no flex/grid blocks, so the editor can't
+// open a further drawer (enforces the depth cap by hiding the option).
+const nestedTools = { ...tools };
+delete (nestedTools as Record<string, unknown>).flexblock;
+delete (nestedTools as Record<string, unknown>).gridblock;
 
 bus.on(async (event) => {
 	if (event.type === 'open-url') {
@@ -244,7 +279,7 @@ onMounted(async () => {
 
 onUnmounted(async () => {
 	editorjsRef.value?.destroy();
-	await destroyFlexEditor();
+	await destroyAllFlexDrawers();
 	bus.reset();
 });
 
@@ -320,17 +355,18 @@ function sanitizeValue(value: any): EditorJS.OutputData | null {
 		<div ref="editorElement" :class="{ [font]: true, disabled, bordered }" />
 
 		<v-drawer
-			v-if="!disabled" :model-value="flexEditorOpen" icon="edit"
-			:title="t('Flex Item')" cancelable
-			@update:model-value="onFlexDrawerUpdate"
-			@cancel="cancelFlexEditor"
-			style="z-index: 2000;"
+			v-for="(id, index) in flexStackIds" :key="id"
+			v-show="!disabled" :model-value="true" icon="edit"
+			:title="`${t('Flex Item')} · level ${index + 1}`" cancelable
+			:style="{ zIndex: 2000 + index * 20 }"
+			@update:model-value="(v: boolean) => { if (!v) popFlexDrawer(id); }"
+			@cancel="popFlexDrawer(id)"
 		>
 			<div class="flex-editor-drawer-content">
-				<div ref="flexEditorElement" class="flex-editor-holder"></div>
+				<div :ref="(el: any) => setFlexHolder(id, el)" class="flex-editor-holder"></div>
 				<div class="flex-editor-actions">
-					<VButton :icon="true" :rounded="true" @click="cancelFlexEditor" :outlined="true"><VIcon name="cancel" /></VButton>
-					<VButton :icon="true" :rounded="true" @click="confirmFlexEditor"><VIcon name="check" /></VButton>
+					<VButton :icon="true" :rounded="true" @click="popFlexDrawer(id)" :outlined="true"><VIcon name="cancel" /></VButton>
+					<VButton :icon="true" :rounded="true" @click="confirmFlexDrawer(id)"><VIcon name="check" /></VButton>
 				</div>
 			</div>
 		</v-drawer>
