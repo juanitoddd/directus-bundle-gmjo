@@ -53,22 +53,64 @@ function ensureTrailingSlash(url: string): string {
 }
 
 /**
- * Collect every placeholder dot-path used in a template's blocks (recursively).
+ * Read a `{{ … }}` token starting at `open`, matching the closing `}}` while
+ * accounting for nested `{{ … }}` (e.g. inside an image token's attribute).
+ * Returns the inner content and the index just past the closing `}}`, or null.
+ */
+function readBraceToken(str: string, open: number): { content: string; end: number } | null {
+    let depth = 0;
+    let j = open;
+    while (j < str.length) {
+        if (str.startsWith('{{', j)) {
+            depth++;
+            j += 2;
+        } else if (str.startsWith('}}', j)) {
+            depth--;
+            j += 2;
+            if (depth === 0) return { content: str.slice(open + 2, j - 2), end: j };
+        } else {
+            j++;
+        }
+    }
+    return null;
+}
+
+/** Pull the field + attribute placeholder paths out of an `image:` token body. */
+function imageTokenPaths(content: string, add: (path: string) => void) {
+    const body = content.slice('image:'.length);
+    const commaIdx = body.indexOf(',');
+    const field = (commaIdx === -1 ? body : body.slice(0, commaIdx)).trim();
+    if (field) add(field);
+
+    const attrStr = commaIdx === -1 ? '' : body.slice(commaIdx + 1);
+    const re = new RegExp(PLACEHOLDER_RE.source, 'g');
+    let m: RegExpExecArray | null;
+    // eslint-disable-next-line no-cond-assign
+    while ((m = re.exec(attrStr)) !== null) {
+        const p = m[1].trim();
+        if (p) add(p);
+    }
+}
+
+/**
+ * Collect every placeholder dot-path used in a template's blocks (recursively),
+ * including paths nested inside an image token's attributes.
  */
 export function collectTemplatePaths(blocks: any[] | undefined): string[] {
     const paths = new Set<string>();
+    const add = (p: string) => paths.add(p);
 
     const scanString = (str: string) => {
-        let match: RegExpExecArray | null;
-        PLACEHOLDER_RE.lastIndex = 0;
-        // eslint-disable-next-line no-cond-assign
-        while ((match = PLACEHOLDER_RE.exec(str)) !== null) {
-            let raw = match[1].trim();
-            // For structured image tokens, only the field part is a real path.
-            if (raw.startsWith('image:')) {
-                raw = raw.slice('image:'.length).split(',')[0].trim();
-            }
-            if (raw) paths.add(raw);
+        let i = 0;
+        while (i < str.length) {
+            const open = str.indexOf('{{', i);
+            if (open === -1) break;
+            const token = readBraceToken(str, open);
+            if (!token) break;
+            const content = token.content.trim();
+            if (content.startsWith('image:')) imageTokenPaths(content, add);
+            else if (content) add(content);
+            i = token.end;
         }
     };
 
@@ -142,6 +184,10 @@ export function interpolateTemplate(
         const src = fileSrc(resolvePath(item, field, language));
         if (!src) return '';
 
+        // Attribute values may mix static text with placeholders, e.g.
+        // alt="This is {{first_name}} {{last_name}}".
+        const interpAttr = (value: string) => value.replace(PLACEHOLDER_RE, (_m, p) => tokenValue(String(p).trim()));
+
         const styleMap: [string, string][] = [
             ['maxwidth', 'max-width'],
             ['maxheight', 'max-height'],
@@ -150,15 +196,20 @@ export function interpolateTemplate(
         ];
         const styles = styleMap
             .filter(([key]) => attrs[key])
-            .map(([key, css]) => `${css}: ${attrs[key]}`);
+            .map(([key, css]) => `${css}: ${interpAttr(attrs[key])}`);
         const styleAttr = styles.length ? ` style="${escapeHtml(styles.join('; '))}"` : '';
 
-        const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(attrs.alt || '')}"${styleAttr} />`;
+        const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(interpAttr(attrs.alt || ''))}"${styleAttr} />`;
 
-        const link = attrs.link ? attrs.link.trim() : '';
+        const link = interpAttr(attrs.link || '').trim();
         return link
             ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${img}</a>`
             : img;
+    };
+
+    const renderToken = (content: string): string => {
+        const trimmed = content.trim();
+        return trimmed.startsWith('image:') ? renderImageToken(trimmed) : tokenValue(trimmed);
     };
 
     const interpolateString = (str: string): string => {
@@ -170,11 +221,26 @@ export function interpolateTemplate(
                 return `<img src="${assetUrl(value)}" alt="" />`;
             }
         }
-        return str.replace(PLACEHOLDER_RE, (_m, raw) => {
-            const content = String(raw).trim();
-            if (content.startsWith('image:')) return renderImageToken(content);
-            return tokenValue(content);
-        });
+
+        // Brace-aware scan so tokens can contain nested {{ }} (e.g. image attrs).
+        let result = '';
+        let i = 0;
+        while (i < str.length) {
+            const open = str.indexOf('{{', i);
+            if (open === -1) {
+                result += str.slice(i);
+                break;
+            }
+            result += str.slice(i, open);
+            const token = readBraceToken(str, open);
+            if (!token) {
+                result += str.slice(open);
+                break;
+            }
+            result += renderToken(token.content);
+            i = token.end;
+        }
+        return result;
     };
 
     const walk = (value: any): any => {
