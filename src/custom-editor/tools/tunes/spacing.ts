@@ -12,10 +12,27 @@ interface SpacingData {
 }
 
 const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
-const DEFAULT_SPACING = '0.75rem';
-const ZERO_SPACING = '0';
-// Only layout containers get spacing by default; everything else starts at 0.
-const SPACED_BLOCKS = new Set(['flexblock', 'gridblock']);
+const SPACED = '0.75rem';
+const ZERO = '0';
+
+const box = (top: string, right: string, bottom: string, left: string): Required<BoxValues> => ({ top, right, bottom, left });
+const boxAll = (v: string) => box(v, v, v, v);
+
+interface BoxDefaults {
+	padding: Required<BoxValues>;
+	margin: Required<BoxValues>;
+}
+
+/** Per-block default spacing. */
+function defaultsForBlock(name: string | undefined): BoxDefaults {
+	if (name === 'flexblock' || name === 'gridblock') {
+		return { padding: boxAll(SPACED), margin: boxAll(SPACED) };
+	}
+	if (name === 'delimiterblock') {
+		return { padding: box(SPACED, ZERO, SPACED, ZERO), margin: boxAll(ZERO) };
+	}
+	return { padding: boxAll(ZERO), margin: boxAll(ZERO) };
+}
 
 const PADDING_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1" stroke-dasharray="2 2"/></svg>';
 const MARGIN_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="2 2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>';
@@ -25,13 +42,13 @@ const BOXES: { key: BoxKind; label: string; icon: string }[] = [
 	{ key: 'margin', label: 'Margin', icon: MARGIN_ICON },
 ];
 
-function sanitizeBox(value: unknown, fallback: string): BoxValues {
+function sanitizeBox(value: unknown, defaults: Required<BoxValues>): BoxValues {
 	const out: BoxValues = {};
 	const source = (value && typeof value === 'object') ? (value as Record<string, unknown>) : {};
 	for (const side of SIDES) {
 		const raw = source[side];
-		// Missing sides take the block-type default so inputs always show a value.
-		out[side] = (typeof raw === 'string' && raw.trim()) ? raw.trim() : fallback;
+		// Missing sides take the per-block default so inputs always show a value.
+		out[side] = (typeof raw === 'string' && raw.trim()) ? raw.trim() : defaults[side];
 	}
 	return out;
 }
@@ -45,10 +62,10 @@ export class Spacing implements BlockTune {
 	constructor({ api, data, block }: BlockToolConstructorOptions) {
 		this.api = api;
 		this.block = block;
-		const fallback = SPACED_BLOCKS.has((block as any)?.name) ? DEFAULT_SPACING : ZERO_SPACING;
+		const defaults = defaultsForBlock((block as any)?.name);
 		this.data = {
-			padding: sanitizeBox((data as Partial<SpacingData> | undefined)?.padding, fallback),
-			margin: sanitizeBox((data as Partial<SpacingData> | undefined)?.margin, fallback),
+			padding: sanitizeBox((data as Partial<SpacingData> | undefined)?.padding, defaults.padding),
+			margin: sanitizeBox((data as Partial<SpacingData> | undefined)?.margin, defaults.margin),
 		};
 	}
 

@@ -570,6 +570,23 @@
 	cursor: pointer;
 }
 
+/* Delimiter block */
+.codex-editor .ce-delimiter-block {
+	
+}
+
+.codex-editor .ce-delimiter-block__line {
+	margin: 0;
+	margin-block: 0 !important;
+	border: none;
+	border-top: 1px solid currentColor;
+	padding: 0;
+}
+
+.codex-editor .ce-delimiter-block__line::after {
+	content: none !important;
+}
+
 /* Style tune */
 .ce-style-tune {
 	display: flex;

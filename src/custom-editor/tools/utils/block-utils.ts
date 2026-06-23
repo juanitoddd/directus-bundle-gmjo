@@ -434,6 +434,13 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                 break;
             }
 
+            case 'delimiterblock': {
+                const width = escapeHtml(String(data.width || '1px'));
+                const color = escapeHtml(String(data.color || 'currentColor'));
+                blockParts.push(`<hr class="editorjs-delimiter" style="border: none; border-top: ${width} solid ${color};" />`);
+                break;
+            }
+
             case 'reference': {
                 // If the caller pre-resolved this reference (fetched item + template
                 // and interpolated), inline that HTML; otherwise emit a hydration

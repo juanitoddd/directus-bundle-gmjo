@@ -21,6 +21,7 @@ import GridBlock from './tools/block-tools/grid-block';
 import ButtonBlock from './tools/block-tools/button-block';
 import ReferenceBlock from './tools/block-tools/reference-block';
 import CollectionBlock from './tools/block-tools/collection-block';
+import DelimiterBlock from './tools/block-tools/delimiter-block';
 import { EDITOR_COLORS } from './tools/utils/colors';
 import { Flex } from './tools/tunes/flex';
 import { Grid } from './tools/tunes/grid';
@@ -206,6 +207,10 @@ export default function getTools(
                 baseURL: uploaderConfig.baseURL,
             },
             tunes: ['alignment', 'spacing', 'style'],
+        },
+        delimiterblock: {
+            class: DelimiterBlock,
+            tunes: ['spacing'],
         },
         // EXAMPLE (Part 4/4): add marker tool
         //     class: Marker,

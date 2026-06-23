@@ -644,12 +644,14 @@
 	border: 0;
 }
 
+/*
 .codex-editor .ce-block hr::after {
 	font-size: 28px;
 	line-height: 0;
 	letter-spacing: 16px;
 	content: '...';
 }
+*/
 
 .codex-editor .ce-block table {
 	border-collapse: collapse;

@@ -47,6 +47,7 @@ const props = withDefaults(
 			'button',
 			'reference',
 			'collectionblock',
+			'delimiterblock',
 		],
 		font: 'sans-serif',
 	},
