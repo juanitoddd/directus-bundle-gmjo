@@ -300,6 +300,51 @@ export class ImageTool extends BaseImageTool {
             wrapperElement.append(tuneElement);
         }
 
+        // Object-fit: a dropdown row (the values pick how the image fills its box).
+        const objectFitOptions: { value: string; label: string }[] = [
+            { value: '', label: 'Default' },
+            { value: 'fill', label: 'Fill' },
+            { value: 'contain', label: 'Contain' },
+            { value: 'cover', label: 'Cover' },
+            { value: 'none', label: 'None' },
+            { value: 'scale-down', label: 'Scale down' },
+        ];
+
+        const objectFitRow = document.createElement('div');
+        objectFitRow.classList.add('ce-popover-item', 'ce-image-objectfit');
+
+        const objectFitIcon = document.createElement('div');
+        objectFitIcon.classList.add('ce-popover-item__icon');
+        const objectFitI = document.createElement('i');
+        objectFitI.innerHTML = '⤢';
+        objectFitIcon.append(objectFitI);
+        objectFitRow.append(objectFitIcon);
+
+        const objectFitTitle = document.createElement('div');
+        objectFitTitle.classList.add('ce-popover-item__title');
+        objectFitTitle.innerHTML = 'Object Fit';
+        objectFitRow.append(objectFitTitle);
+
+        const objectFitSelect = document.createElement('select');
+        objectFitSelect.classList.add('ce-image-objectfit__select');
+        for (const option of objectFitOptions) {
+            const optionEl = document.createElement('option');
+            optionEl.value = option.value;
+            optionEl.textContent = option.label;
+            objectFitSelect.append(optionEl);
+        }
+        objectFitSelect.value = (this as any).data.file?.objectFit || '';
+        objectFitSelect.addEventListener('keydown', (event) => event.stopPropagation());
+        objectFitSelect.addEventListener('change', () => {
+            const currentFile = (this as any).data.file || {};
+            currentFile.objectFit = objectFitSelect.value;
+            (this as any).data.file = currentFile;
+            this.applyImageSettings();
+        });
+        objectFitRow.append(objectFitSelect);
+
+        wrapperElement.append(objectFitRow);
+
         return wrapperElement;
     }
 
@@ -325,6 +370,12 @@ export class ImageTool extends BaseImageTool {
             imgElement.style.maxHeight = fileData.maxHeight;
         } else {
             imgElement.style.maxHeight = '';
+        }
+
+        if (fileData.objectFit) {
+            imgElement.style.objectFit = fileData.objectFit;
+        } else {
+            imgElement.style.objectFit = '';
         }
 
         const linkUrl = fileData.link?.trim();

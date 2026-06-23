@@ -438,6 +438,7 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                     const styleRules: string[] = [];
                     if (file.maxWidth) styleRules.push(`max-width: ${escapeHtml(String(file.maxWidth))}`);
                     if (file.maxHeight) styleRules.push(`max-height: ${escapeHtml(String(file.maxHeight))}`);
+                    if (file.objectFit) styleRules.push(`object-fit: ${escapeHtml(String(file.objectFit))}`);
                     const styleAttr = styleRules.length ? ` style="${styleRules.join('; ')}"` : '';
 
                     const img = `<img src="${escapeHtml(url)}" alt="${caption}"${styleAttr} />`;

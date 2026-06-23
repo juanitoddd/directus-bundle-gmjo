@@ -570,6 +570,23 @@
 	cursor: pointer;
 }
 
+/* Image tune: object-fit dropdown row */
+.ce-image-objectfit {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.ce-image-objectfit__select {
+	margin-left: auto;
+	padding: 0.2rem 0.4rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--form--field--input--background);
+	color: var(--theme--form--field--input--foreground);
+	font-size: 0.85rem;
+}
+
 /* Delimiter block */
 .codex-editor .ce-delimiter-block {
 	
