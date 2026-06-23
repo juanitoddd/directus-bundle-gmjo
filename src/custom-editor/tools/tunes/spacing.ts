@@ -23,11 +23,9 @@ interface BoxDefaults {
 	margin: Required<BoxValues>;
 }
 
-/** Per-block default spacing. */
+/** Per-block default spacing. Everything is 0 except the delimiter block, which
+ *  gets vertical padding so the line has breathing room. */
 function defaultsForBlock(name: string | undefined): BoxDefaults {
-	if (name === 'flexblock' || name === 'gridblock') {
-		return { padding: boxAll(SPACED), margin: boxAll(SPACED) };
-	}
 	if (name === 'delimiterblock') {
 		return { padding: box(SPACED, ZERO, SPACED, ZERO), margin: boxAll(ZERO) };
 	}
