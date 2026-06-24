@@ -193,6 +193,7 @@ export function interpolateTemplate(
             ['maxheight', 'max-height'],
             ['width', 'width'],
             ['height', 'height'],
+            ['objectFit', 'object-fit'],
         ];
         const styles = styleMap
             .filter(([key]) => attrs[key])
