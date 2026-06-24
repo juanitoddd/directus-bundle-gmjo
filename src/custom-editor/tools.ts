@@ -60,6 +60,10 @@ export default function getTools(
         paragraph: {
             class: ParagraphTool,
             inlineToolbar: inlineTools,
+            // Keep empty paragraphs (e.g. pressing Enter twice) on save.
+            config: {
+                preserveBlank: true,
+            },
             tunes: ['alignment', 'spacing', 'style'],
         },
         list: {

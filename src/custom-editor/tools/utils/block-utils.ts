@@ -409,9 +409,11 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
             case 'paragraph': {
                 // Treat paragraph text as HTML, but sanitize it first
                 const safe = sanitize(data.text || '');
-                blockParts.push(`<p>${safe}</p>`);
+                // Preserved empty paragraphs (double-Enter) need a <br> to keep height.
+                const isEmpty = !String(data.text || '').replace(/&nbsp;/gi, ' ').trim();
+                blockParts.push(isEmpty ? '<p><br></p>' : `<p>${safe}</p>`);
                 break;
-            }                
+            }
 
             case 'header': {
                 // Treat header text as HTML, sanitize it first
