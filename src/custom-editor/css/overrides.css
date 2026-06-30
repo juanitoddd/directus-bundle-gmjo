@@ -587,6 +587,36 @@
 	font-size: 0.85rem;
 }
 
+/* Component block */
+.codex-editor .ce-component-block {
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	padding: 0.75rem;
+}
+
+.codex-editor .ce-component-block__label {
+	font-size: 0.8rem;
+	color: var(--theme--form--field--input--foreground-subdued);
+	margin-bottom: 0.35rem;
+}
+
+.codex-editor .ce-component-block__input {
+	width: 100%;
+	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--form--field--input--background);
+	color: var(--theme--form--field--input--foreground);
+	font-family: var(--theme--fonts--monospace--font-family);
+}
+
+.codex-editor .ce-component-block__preview {
+	margin-top: 0.4rem;
+	font-family: var(--theme--fonts--monospace--font-family);
+	font-size: 0.85rem;
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
 /* Delimiter block */
 .codex-editor .ce-delimiter-block {
 	

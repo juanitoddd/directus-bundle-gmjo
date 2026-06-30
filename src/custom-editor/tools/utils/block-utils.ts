@@ -199,7 +199,7 @@ export function interpolateTemplate(
             .filter(([key]) => attrs[key])
             .map(([key, css]) => `${css}: ${interpAttr(attrs[key])}`);
         const styleAttr = styles.length ? ` style="${escapeHtml(styles.join('; '))}"` : '';
-
+        console.log("styleAttr", styleAttr)
         const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(interpAttr(attrs.alt || ''))}"${styleAttr} />`;
 
         const link = interpAttr(attrs.link || '').trim();
@@ -501,6 +501,14 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
             case 'quote': {
                 const caption = escapeHtml(data.caption || '');
                 blockParts.push(`<blockquote><p>${escapeHtml(data.text || '')}</p>${caption ? `<cite>${caption}</cite>` : ''}</blockquote>`);
+                break;
+            }
+
+            case 'componentblock': {
+                const name = escapeHtml(String(data.name || '').trim());
+                if (name) {
+                    blockParts.push(`<div class="editorjs-component" data-component="${name}"></div>`);
+                }
                 break;
             }
 

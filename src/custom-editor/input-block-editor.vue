@@ -48,6 +48,7 @@ const props = withDefaults(
 			'reference',
 			'collectionblock',
 			'delimiterblock',
+			'componentblock',
 		],
 		font: 'sans-serif',
 	},

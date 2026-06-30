@@ -22,6 +22,7 @@ import ButtonBlock from './tools/block-tools/button-block';
 import ReferenceBlock from './tools/block-tools/reference-block';
 import CollectionBlock from './tools/block-tools/collection-block';
 import DelimiterBlock from './tools/block-tools/delimiter-block';
+import ComponentBlock from './tools/block-tools/component-block';
 import { EDITOR_COLORS } from './tools/utils/colors';
 import { Flex } from './tools/tunes/flex';
 import { Grid } from './tools/tunes/grid';
@@ -215,6 +216,10 @@ export default function getTools(
         delimiterblock: {
             class: DelimiterBlock,
             tunes: ['spacing'],
+        },
+        componentblock: {
+            class: ComponentBlock,
+            tunes: ['spacing', 'style'],
         },
         // EXAMPLE (Part 4/4): add marker tool
         //     class: Marker,
