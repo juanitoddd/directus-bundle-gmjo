@@ -507,7 +507,18 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
             case 'componentblock': {
                 const name = escapeHtml(String(data.name || '').trim());
                 if (name) {
-                    blockParts.push(`<div class="editorjs-component" data-component="${name}"></div>`);
+                    // Params become a props object, serialized as a JSON data-attribute.
+                    const props: Record<string, string> = {};
+                    if (Array.isArray(data.params)) {
+                        for (const p of data.params) {
+                            const key = String(p?.key || '').trim();
+                            if (key) props[key] = String(p?.value ?? '');
+                        }
+                    }
+                    const propsAttr = Object.keys(props).length
+                        ? ` data-props="${escapeHtml(JSON.stringify(props))}"`
+                        : '';
+                    blockParts.push(`<div class="editorjs-component" data-component="${name}"${propsAttr}></div>`);
                 }
                 break;
             }
