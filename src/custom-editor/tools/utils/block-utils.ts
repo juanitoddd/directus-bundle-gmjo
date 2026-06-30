@@ -513,13 +513,12 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                 const rawName = String(data.name || '').trim();
                 if (!rawName) break;
 
-                // Params become a props object.
+                // Params are a Record<string, unknown> → normalize to string props.
                 const props: Record<string, string> = {};
-                if (Array.isArray(data.params)) {
-                    for (const p of data.params) {
-                        const key = String(p?.key || '').trim();
-                        if (key) props[key] = String(p?.value ?? '');
-                    }
+                const rawParams = (data.params && typeof data.params === 'object') ? data.params : {};
+                for (const [k, v] of Object.entries(rawParams)) {
+                    const key = String(k).trim();
+                    if (key) props[key] = String(v ?? '');
                 }
 
                 if (options.componentPreview) {

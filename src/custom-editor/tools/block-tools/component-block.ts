@@ -1,13 +1,8 @@
 import type { BlockToolConstructorOptions } from '@editorjs/editorjs';
 
-interface ComponentParam {
-	key: string;
-	value: string;
-}
-
 interface ComponentBlockData {
 	name: string;
-	params: ComponentParam[];
+	params: Record<string, unknown>;
 }
 
 export default class ComponentBlock {
@@ -15,6 +10,8 @@ export default class ComponentBlock {
 	private block: any;
 	private preview: HTMLElement | null = null;
 	private paramsWrap: HTMLElement | null = null;
+	// Editing model for the key/value rows; synced into `data.params` (a Record).
+	private paramEntries: { key: string; value: string }[] = [];
 
 	static get toolbox() {
 		return {
@@ -26,12 +23,12 @@ export default class ComponentBlock {
 	constructor({ data, block }: BlockToolConstructorOptions) {
 		this.block = block;
 		const incoming = data as Partial<ComponentBlockData> | undefined;
+		const params = (incoming?.params && typeof incoming.params === 'object') ? incoming.params : {};
 		this.data = {
 			name: incoming?.name || '',
-			params: Array.isArray(incoming?.params)
-				? incoming!.params.map((p) => ({ key: String(p?.key || ''), value: String(p?.value ?? '') }))
-				: [],
+			params: { ...params },
 		};
+		this.paramEntries = Object.entries(this.data.params).map(([key, value]) => ({ key, value: String(value ?? '') }));
 	}
 
 	render() {
@@ -82,7 +79,7 @@ export default class ComponentBlock {
 		addBtn.classList.add('ce-component-tune__add');
 		addBtn.textContent = '+ Add parameter';
 		addBtn.addEventListener('click', () => {
-			this.data.params.push({ key: '', value: '' });
+			this.paramEntries.push({ key: '', value: '' });
 			this.renderParamRows();
 		});
 		panel.appendChild(addBtn);
@@ -91,11 +88,20 @@ export default class ComponentBlock {
 		return panel;
 	}
 
+	private syncParams() {
+		const out: Record<string, unknown> = {};
+		for (const entry of this.paramEntries) {
+			const key = entry.key.trim();
+			if (key) out[key] = entry.value;
+		}
+		this.data.params = out;
+	}
+
 	private renderParamRows() {
 		if (!this.paramsWrap) return;
 		this.paramsWrap.innerHTML = '';
 
-		this.data.params.forEach((param, index) => {
+		this.paramEntries.forEach((entry, index) => {
 			const row = document.createElement('div');
 			row.classList.add('ce-component-param-row');
 
@@ -103,10 +109,11 @@ export default class ComponentBlock {
 			keyInput.type = 'text';
 			keyInput.classList.add('ce-tune__input');
 			keyInput.placeholder = 'key';
-			keyInput.value = param.key;
+			keyInput.value = entry.key;
 			keyInput.addEventListener('keydown', (e) => e.stopPropagation());
 			keyInput.addEventListener('input', () => {
-				param.key = keyInput.value;
+				entry.key = keyInput.value;
+				this.syncParams();
 				this.renderPreview();
 			});
 			keyInput.addEventListener('change', () => this.block?.dispatchChange());
@@ -115,10 +122,11 @@ export default class ComponentBlock {
 			valueInput.type = 'text';
 			valueInput.classList.add('ce-tune__input');
 			valueInput.placeholder = 'value';
-			valueInput.value = param.value;
+			valueInput.value = entry.value;
 			valueInput.addEventListener('keydown', (e) => e.stopPropagation());
 			valueInput.addEventListener('input', () => {
-				param.value = valueInput.value;
+				entry.value = valueInput.value;
+				this.syncParams();
 				this.renderPreview();
 			});
 			valueInput.addEventListener('change', () => this.block?.dispatchChange());
@@ -128,7 +136,8 @@ export default class ComponentBlock {
 			removeBtn.classList.add('ce-component-param-row__remove');
 			removeBtn.textContent = '×';
 			removeBtn.addEventListener('click', () => {
-				this.data.params.splice(index, 1);
+				this.paramEntries.splice(index, 1);
+				this.syncParams();
 				this.renderParamRows();
 				this.renderPreview();
 				this.block?.dispatchChange();
@@ -142,7 +151,7 @@ export default class ComponentBlock {
 	private renderPreview() {
 		if (!this.preview) return;
 		const name = this.data.name || 'Component';
-		const propsStr = this.data.params
+		const propsStr = this.paramEntries
 			.filter((p) => p.key.trim())
 			.map((p) => `${p.key.trim()}="${p.value}"`)
 			.join(' ');
@@ -150,6 +159,7 @@ export default class ComponentBlock {
 	}
 
 	save(): ComponentBlockData {
+		this.syncParams();
 		return this.data;
 	}
 }
