@@ -284,7 +284,7 @@ export default class GridBlock {
 
 			const richPreview = document.createElement('div');
 			richPreview.classList.add('ce-grid-block__item-rich-preview');
-			const html = blocksToHtml(item.content?.blocks || [], { references: this.referencesCache });
+			const html = blocksToHtml(item.content?.blocks || [], { references: this.referencesCache, componentPreview: true });
 			richPreview.innerHTML = html || '<em class="text-muted">Empty</em>';
 			itemElement.appendChild(richPreview);
 

@@ -313,6 +313,11 @@ export interface BlocksToHtmlOptions {
      * otherwise a hydration placeholder is emitted.
      */
     references?: Record<string, string>;
+    /**
+     * Editor-preview mode: render component blocks as a readable
+     * `<Name prop="value" />` tag instead of the front-end hydration div.
+     */
+    componentPreview?: boolean;
 }
 
 export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOptions = {}): string {
@@ -505,20 +510,29 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
             }
 
             case 'componentblock': {
-                const name = escapeHtml(String(data.name || '').trim());
-                if (name) {
-                    // Params become a props object, serialized as a JSON data-attribute.
-                    const props: Record<string, string> = {};
-                    if (Array.isArray(data.params)) {
-                        for (const p of data.params) {
-                            const key = String(p?.key || '').trim();
-                            if (key) props[key] = String(p?.value ?? '');
-                        }
+                const rawName = String(data.name || '').trim();
+                if (!rawName) break;
+
+                // Params become a props object.
+                const props: Record<string, string> = {};
+                if (Array.isArray(data.params)) {
+                    for (const p of data.params) {
+                        const key = String(p?.key || '').trim();
+                        if (key) props[key] = String(p?.value ?? '');
                     }
+                }
+
+                if (options.componentPreview) {
+                    // Editor preview: a readable <Name prop="value" /> tag.
+                    const propsStr = Object.entries(props).map(([k, v]) => `${k}="${v}"`).join(' ');
+                    const tag = `<${rawName}${propsStr ? ' ' + propsStr : ''} />`;
+                    blockParts.push(`<code class="editorjs-component-preview">${escapeHtml(tag)}</code>`);
+                } else {
+                    // Front-end: hydration placeholder with props as a JSON attribute.
                     const propsAttr = Object.keys(props).length
                         ? ` data-props="${escapeHtml(JSON.stringify(props))}"`
                         : '';
-                    blockParts.push(`<div class="editorjs-component" data-component="${name}"${propsAttr}></div>`);
+                    blockParts.push(`<div class="editorjs-component" data-component="${escapeHtml(rawName)}"${propsAttr}></div>`);
                 }
                 break;
             }
