@@ -377,13 +377,17 @@ export default class CollectionBlock {
 
 		const fieldType = () => fields.find((f) => f.field === filter.field)?.type || 'string';
 
+		const rebuildValueInput = () => {
+			valueHolder.innerHTML = '';
+			valueHolder.appendChild(this.buildValueInput(fieldType(), filter));
+		};
+
 		const rebuildValue = () => {
 			opSelect.innerHTML = '';
 			for (const op of operatorsForType(fieldType())) this.appendOption(opSelect, op.value, op.label);
 			opSelect.value = filter.operator || (opSelect.options[0]?.value ?? '');
 			filter.operator = opSelect.value;
-			valueHolder.innerHTML = '';
-			valueHolder.appendChild(this.buildValueInput(fieldType(), filter));
+			rebuildValueInput();
 		};
 
 		fieldSelect.addEventListener('change', () => {
@@ -396,6 +400,8 @@ export default class CollectionBlock {
 
 		opSelect.addEventListener('change', () => {
 			filter.operator = opSelect.value;
+			// The value editor depends on the operator (e.g. `in` needs a text list).
+			rebuildValueInput();
 			this.commit();
 		});
 
@@ -419,6 +425,22 @@ export default class CollectionBlock {
 	}
 
 	private buildValueInput(type: string, filter: FilterCondition): HTMLElement {
+		// The `in` operator takes a comma-separated list regardless of field type.
+		if (filter.operator === 'in') {
+			const input = document.createElement('input');
+			input.type = 'text';
+			input.classList.add('ce-tune__input');
+			input.placeholder = 'a, b, c';
+			input.value = filter.value || '';
+			input.addEventListener('keydown', (e) => e.stopPropagation());
+			input.addEventListener('input', () => {
+				filter.value = input.value;
+				this.schedulePreview();
+			});
+			input.addEventListener('change', () => this.block?.dispatchChange());
+			return input;
+		}
+
 		const kind = valueInputType(type);
 
 		if (kind === 'boolean') {

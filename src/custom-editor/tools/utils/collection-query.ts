@@ -19,19 +19,21 @@ export function operatorsForType(type: string): { value: string; label: string }
 	const t = (type || '').toLowerCase();
 	const eq = [{ value: 'eq', label: 'equals' }, { value: 'neq', label: 'not equals' }];
 
+	const inOp = { value: 'in', label: 'is one of (a,b,c)' };
+
 	if (['string', 'text', 'uuid', 'hash', 'csv'].includes(t)) {
-		return [...eq, { value: 'contains', label: 'contains' }, { value: 'starts_with', label: 'starts with' }, { value: 'ends_with', label: 'ends with' }];
+		return [...eq, { value: 'contains', label: 'contains' }, { value: 'starts_with', label: 'starts with' }, { value: 'ends_with', label: 'ends with' }, inOp];
 	}
 	if (['integer', 'biginteger', 'float', 'decimal', 'number'].includes(t)) {
-		return [...eq, { value: 'gt', label: '>' }, { value: 'gte', label: '≥' }, { value: 'lt', label: '<' }, { value: 'lte', label: '≤' }];
+		return [...eq, { value: 'gt', label: '>' }, { value: 'gte', label: '≥' }, { value: 'lt', label: '<' }, { value: 'lte', label: '≤' }, inOp];
 	}
 	if (['datetime', 'date', 'timestamp', 'time'].includes(t)) {
-		return [...eq, { value: 'gt', label: 'after' }, { value: 'gte', label: 'on/after' }, { value: 'lt', label: 'before' }, { value: 'lte', label: 'on/before' }];
+		return [...eq, { value: 'gt', label: 'after' }, { value: 'gte', label: 'on/after' }, { value: 'lt', label: 'before' }, { value: 'lte', label: 'on/before' }, inOp];
 	}
 	if (t === 'boolean') {
 		return [{ value: 'eq', label: 'is' }];
 	}
-	return eq;
+	return [...eq, inOp];
 }
 
 /** HTML input type for a field's value editor. */
@@ -50,11 +52,28 @@ function coerce(value: string): any {
 	return value;
 }
 
+/** Coerce a single `_in` item: purely-numeric → number (integer PKs); else string. */
+function coerceItem(value: string): any {
+	if (value === 'true') return true;
+	if (value === 'false') return false;
+	if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
+	return value;
+}
+
 /** Convert the flat AND filter list to a Directus filter object. */
 export function buildFilter(filters: FilterCondition[]): any {
 	const valid = (filters || []).filter((f) => f.field && f.operator && f.value !== '' && f.value != null);
 	if (!valid.length) return undefined;
-	return { _and: valid.map((f) => ({ [f.field]: { [`_${f.operator}`]: coerce(f.value) } })) };
+
+	return {
+		_and: valid.map((f) => {
+			if (f.operator === 'in') {
+				const items = f.value.split(',').map((s) => s.trim()).filter((s) => s !== '').map(coerceItem);
+				return { [f.field]: { _in: items } };
+			}
+			return { [f.field]: { [`_${f.operator}`]: coerce(f.value) } };
+		}),
+	};
 }
 
 /** Build the Directus `/items` query params for a collection block. */
