@@ -51,6 +51,10 @@ function collectResolvables(blocks: any[] | undefined): Resolvable[] {
 					if (Array.isArray(nested)) scan(nested);
 				}
 			}
+
+			// Accordion block: title + content rich fields.
+			if (Array.isArray(data.title?.blocks)) scan(data.title.blocks);
+			if (Array.isArray(data.content?.blocks)) scan(data.content.blocks);
 		}
 	};
 

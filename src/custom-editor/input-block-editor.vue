@@ -49,6 +49,7 @@ const props = withDefaults(
 			'collectionblock',
 			'delimiterblock',
 			'componentblock',
+			'accordionblock',
 		],
 		font: 'sans-serif',
 	},

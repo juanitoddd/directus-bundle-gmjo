@@ -617,6 +617,66 @@
 	color: var(--theme--form--field--input--foreground-subdued);
 }
 
+/* Accordion block (editor) */
+.codex-editor .ce-accordion-block {
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	padding: 0.5rem 0.75rem;
+}
+
+.codex-editor .ce-accordion-block__header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	cursor: pointer;
+	user-select: none;
+}
+
+.codex-editor .ce-accordion-block__chevron {
+	transition: transform 0.15s ease;
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+.codex-editor .ce-accordion-block.is-open .ce-accordion-block__chevron {
+	transform: rotate(90deg);
+}
+
+.codex-editor .ce-accordion-block__title {
+	flex: 1;
+	font-weight: 600;
+}
+
+.codex-editor .ce-accordion-block__controls {
+	display: flex;
+	gap: 0.25rem;
+	flex-wrap: wrap;
+	margin: 0.4rem 0;
+}
+
+.codex-editor .ce-accordion-block__btn {
+	padding: 0.2rem 0.5rem;
+	border: 1px solid var(--theme--form--field--input--border-color);
+	background: var(--theme--background-normal);
+	color: var(--theme--form--field--input--foreground);
+	border-radius: var(--theme--border-radius);
+	cursor: pointer;
+	font-size: 0.85rem;
+}
+
+.codex-editor .ce-accordion-block__btn:hover {
+	background: var(--theme--background-accent);
+}
+
+.codex-editor .ce-accordion-block__content-wrap {
+	padding-top: 0.4rem;
+	border-top: 1px solid var(--theme--form--field--input--border-color);
+}
+
+/* Accordion (frontend output) */
+.editorjs-accordion__summary {
+	cursor: pointer;
+}
+
 /* Component preview tag (shown inside flex/grid cell previews) */
 .codex-editor .editorjs-component-preview {
 	display: inline-block;

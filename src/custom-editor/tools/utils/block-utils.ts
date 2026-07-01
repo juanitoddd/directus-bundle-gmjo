@@ -509,6 +509,17 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                 break;
             }
 
+            case 'accordionblock': {
+                // Native <details> accordion — toggles on the frontend with no JS.
+                const titleHtml = blocksToHtml(data.title?.blocks || [], options);
+                const contentHtml = blocksToHtml(data.content?.blocks || [], options);
+                const openAttr = data.open ? ' open' : '';
+                blockParts.push(
+                    `<details class="editorjs-accordion"${openAttr}><summary class="editorjs-accordion__summary">${titleHtml}</summary><div class="editorjs-accordion__content">${contentHtml}</div></details>`,
+                );
+                break;
+            }
+
             case 'componentblock': {
                 const rawName = String(data.name || '').trim();
                 if (!rawName) break;
