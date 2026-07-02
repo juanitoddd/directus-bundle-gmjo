@@ -227,6 +227,39 @@ bus.on(async (event) => {
 	}
 });
 
+// Preserve blank lines when pasting plain text. editor.js drops empty lines on
+// paste; we intercept plain-text paste and insert one paragraph per line
+// (including empty ones), which render as spacing between blocks.
+function handlePlainPaste(event: ClipboardEvent) {
+	const editor = editorjsRef.value;
+	if (!editor || props.disabled) return;
+
+	const dt = event.clipboardData;
+	if (!dt) return;
+
+	// Rich paste (has HTML) → let editor.js handle it normally.
+	if (dt.getData('text/html')) return;
+
+	const text = dt.getData('text/plain');
+	if (!text || !/\r?\n/.test(text)) return; // single line → default behavior
+
+	event.preventDefault();
+	event.stopPropagation();
+
+	const lines = text.replace(/\r\n/g, '\n').split('\n');
+	// Drop a single trailing empty line coming from a terminal newline.
+	if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+
+	const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+	let index = editor.blocks.getCurrentBlockIndex();
+	if (index < 0) index = editor.blocks.getBlocksCount() - 1;
+
+	lines.forEach((line, i) => {
+		editor.blocks.insert('paragraph', { text: esc(line) }, {}, index + 1 + i, i === lines.length - 1);
+	});
+}
+
 onMounted(async () => {
 
 	// Load custom fonts via FontFace API so they are available to Editor.js
@@ -283,9 +316,13 @@ onMounted(async () => {
 	});
 
 	editorjsIsReady.value = true;
+
+	// Intercept plain-text paste (capture phase, before editor.js) to keep blank lines.
+	editorElement.value?.addEventListener('paste', handlePlainPaste, true);
 });
 
 onUnmounted(async () => {
+	editorElement.value?.removeEventListener('paste', handlePlainPaste, true);
 	editorjsRef.value?.destroy();
 	await destroyAllFlexDrawers();
 	bus.reset();
