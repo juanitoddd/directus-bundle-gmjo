@@ -364,7 +364,18 @@
 	flex-direction: column;
 	gap: 0.5rem;
 	padding: 0.5rem;
-	min-width: 240px;
+	width: 420px;
+	max-width: 92vw;
+}
+
+/* Let the block-settings popover grow for the (wide) reference tune. */
+.ce-popover__container:has(.ce-reference-tune) {
+	width: auto;
+	max-width: 92vw;
+}
+
+.ce-popover__container:has(.ce-reference-tune) .ce-popover__items {
+	width: auto;
 }
 
 .ce-reference-tune .ce-reference-block__search {
