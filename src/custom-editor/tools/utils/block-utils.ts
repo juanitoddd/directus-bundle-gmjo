@@ -441,15 +441,26 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                 const caption = escapeHtml(data.caption || data.alt || '');
 
                 if (url) {
-                    // Mirror the custom image tunes (see plugins.ts ImageTool):
-                    // max-width / max-height as inline styles, optional link wrapper.
-                    const styleRules: string[] = [];
-                    if (file.maxWidth) styleRules.push(`max-width: ${escapeHtml(String(file.maxWidth))}`);
-                    if (file.maxHeight) styleRules.push(`max-height: ${escapeHtml(String(file.maxHeight))}`);
-                    if (file.objectFit) styleRules.push(`object-fit: ${escapeHtml(String(file.objectFit))}`);
+                    // Dimensions are emitted as CSS custom properties (desktop + mobile),
+                    // applied by the front-end `.editorjs-image` rule + its @media query
+                    // (mobile falls back to desktop). See the docs for the required CSS.
+                    const cssVars: [any, string][] = [
+                        [file.width, '--iw'],
+                        [file.height, '--ih'],
+                        [file.maxWidth, '--imw'],
+                        [file.maxHeight, '--imh'],
+                        [file.objectFit, '--of'],
+                        [file.widthMobile, '--iw-m'],
+                        [file.heightMobile, '--ih-m'],
+                        [file.maxWidthMobile, '--imw-m'],
+                        [file.maxHeightMobile, '--imh-m'],
+                    ];
+                    const styleRules = cssVars
+                        .filter(([value]) => value)
+                        .map(([value, name]) => `${name}: ${escapeHtml(String(value))}`);
                     const styleAttr = styleRules.length ? ` style="${styleRules.join('; ')}"` : '';
 
-                    const img = `<img src="${escapeHtml(url)}" alt="${caption}"${styleAttr} />`;
+                    const img = `<img class="editorjs-image" src="${escapeHtml(url)}" alt="${caption}"${styleAttr} />`;
 
                     const link = typeof file.link === 'string' ? file.link.trim() : '';
                     if (link) {

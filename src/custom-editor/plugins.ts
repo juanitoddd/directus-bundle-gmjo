@@ -1,9 +1,15 @@
 import BaseAttachesTool from '@editorjs/attaches';
 import BaseImageTool from '@editorjs/image';
+import type { MenuConfig } from '@editorjs/editorjs/types/tools/menu-config';
 // CORE-CHANGE end
 import { useBus } from './bus';
 // CORE-CHANGE start
 import { unexpectedError } from './error';
+
+const OPEN_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>';
+const DIMENSIONS_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5a2 2 0 0 1 2-2h3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg>';
+const LINK_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>';
+const FIT_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>';
 
 /**
  * This file is a modified version of the attaches and image tool from editorjs to work with the Directus file manager.
@@ -202,106 +208,114 @@ export class ImageTool extends BaseImageTool {
         return wrapper;
     }
 
-    renderSettings() {
-        const tunes: Tune[] = [
-            {
-                icon: 'open_in_new',
-                title: 'Open Image',
-                toggle: false,
-                onActivate: () => {
-                    const bus = useBus();
+    renderSettings(): MenuConfig {
+        const base = (super.renderSettings() as any) || [];
+        const baseItems = Array.isArray(base) ? base : (base ? [base] : []);
 
-                    bus.emit({
-                        type: 'open-url',
-                        payload: (this as any).data.file.fileURL,
-                    });
-                },
+        const openImage = {
+            icon: OPEN_ICON,
+            title: 'Open Image',
+            onActivate: () => {
+                const bus = useBus();
+                bus.emit({ type: 'open-url', payload: (this as any).data.file?.fileURL });
             },
-            ...ImageTool.tunes,
+        };
+
+        const dimensions = {
+            icon: DIMENSIONS_ICON,
+            title: 'Dimensions',
+            children: { searchable: false, items: [{ type: 'html', element: this.dimensionsPanel() }] },
+        };
+
+        const link = {
+            icon: LINK_ICON,
+            title: 'Link',
+            children: { searchable: false, items: [{ type: 'html', element: this.linkPanel() }] },
+        };
+
+        const objectFit = {
+            icon: FIT_ICON,
+            title: 'Object Fit',
+            children: { searchable: false, items: this.objectFitItems() },
+        };
+
+        return [openImage, ...baseItems, dimensions, link, objectFit] as MenuConfig;
+    }
+
+    private setFileAttr(key: string, value: string) {
+        const file = (this as any).data.file || {};
+        file[key] = value;
+        (this as any).data.file = file;
+        this.applyImageSettings();
+    }
+
+    /** Dimensions inputs, grouped into Desktop and Mobile sections (nested popover). */
+    private dimensionsPanel(): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.classList.add('ce-image-dimensions');
+
+        const sections: { label: string; fields: [string, string][] }[] = [
+            {
+                label: 'Desktop',
+                fields: [['width', 'Width'], ['height', 'Height'], ['maxWidth', 'Max width'], ['maxHeight', 'Max height']],
+            },
+            {
+                label: 'Mobile (≤ 640px)',
+                fields: [['widthMobile', 'Width'], ['heightMobile', 'Height'], ['maxWidthMobile', 'Max width'], ['maxHeightMobile', 'Max height']],
+            },
         ];
 
-        // Add custom max-width and max-height settings
-        const maxWidthTune: Tune = {
-            title: 'Max Width',
-            icon: '↔',
-            toggle: false,
-            onActivate: () => {
-                const currentFile = (this as any).data.file || {};
-                const input = prompt('Enter max-width (e.g., 500px, 100%, auto):', currentFile.maxWidth || '');
-                if (input !== null) {
-                    currentFile.maxWidth = input.trim();
-                    (this as any).data.file = currentFile;
-                    this.applyImageSettings();
-                }
-            },
-        };
+        for (const section of sections) {
+            const heading = document.createElement('div');
+            heading.classList.add('ce-image-dimensions__section');
+            heading.textContent = section.label;
+            wrap.appendChild(heading);
 
-        const maxHeightTune: Tune = {
-            title: 'Max Height',
-            icon: '↕',
-            toggle: false,
-            onActivate: () => {
-                const currentFile = (this as any).data.file || {};
-                const input = prompt('Enter max-height (e.g., 400px, 100%, auto):', currentFile.maxHeight || '');
-                if (input !== null) {
-                    currentFile.maxHeight = input.trim();
-                    (this as any).data.file = currentFile;
-                    this.applyImageSettings();
-                }
-            },
-        };
+            for (const [key, label] of section.fields) {
+                const field = document.createElement('label');
+                field.classList.add('ce-image-dimensions__field');
 
-        const linkTune: Tune = {
-            title: 'Link Image',
-            icon: '🔗',
-            toggle: false,
-            onActivate: () => {
-                const currentFile = (this as any).data.file || {};
-                const input = prompt('Enter link URL for this image:', currentFile.link || '');
-                if (input !== null) {
-                    currentFile.link = input.trim();
-                    (this as any).data.file = currentFile;
-                    this.applyImageSettings();
-                }
-            },
-        };
+                const span = document.createElement('span');
+                span.classList.add('ce-image-dimensions__label');
+                span.textContent = label;
+                field.appendChild(span);
 
-        tunes.push(maxWidthTune, maxHeightTune, linkTune);
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.classList.add('ce-tune__input');
+                input.placeholder = '200px / 50% / auto';
+                input.value = (this as any).data.file?.[key] || '';
+                input.addEventListener('keydown', (e) => e.stopPropagation());
+                input.addEventListener('input', () => this.setFileAttr(key, input.value.trim()));
+                input.addEventListener('change', () => (this as any).block?.dispatchChange?.());
+                field.appendChild(input);
 
-        const wrapperElement = document.createElement('div');
-        wrapperElement.classList.add('ce-popover__items');
-
-        for (const tune of tunes) {
-            const tuneElement = document.createElement('div');
-            tuneElement.classList.add('ce-popover-item');
-
-            const iconElement = document.createElement('div');
-            iconElement.classList.add('ce-popover-item__icon');
-            const iElement = document.createElement('i');
-            iElement.innerHTML = tune.icon;
-            iconElement.append(iElement);
-            tuneElement.append(iconElement);
-
-            const titleElement = document.createElement('div');
-            titleElement.classList.add('ce-popover-item__title');
-            titleElement.innerHTML = tune.title;
-            tuneElement.append(titleElement);
-
-            if (tune.onActivate) {
-                tuneElement.addEventListener('click', tune.onActivate);
+                wrap.appendChild(field);
             }
-            else if (tune.toggle) {
-                tuneElement.addEventListener('click', () => {
-                    (this as any).tuneToggled(tune.name);
-                    tuneElement.classList.toggle('ce-popover-item--active');
-                });
-            }
-
-            wrapperElement.append(tuneElement);
         }
 
-        // Object-fit: a dropdown row (the values pick how the image fills its box).
-        const objectFitOptions: { value: string; label: string }[] = [
+        return wrap;
+    }
+
+    private linkPanel(): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.classList.add('ce-image-dimensions');
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.classList.add('ce-tune__input');
+        input.placeholder = 'https://…';
+        input.value = (this as any).data.file?.link || '';
+        input.addEventListener('keydown', (e) => e.stopPropagation());
+        input.addEventListener('input', () => this.setFileAttr('link', input.value.trim()));
+        input.addEventListener('change', () => (this as any).block?.dispatchChange?.());
+        wrap.appendChild(input);
+
+        return wrap;
+    }
+
+    private objectFitItems(): any[] {
+        const options = [
             { value: '', label: 'Default' },
             { value: 'fill', label: 'Fill' },
             { value: 'contain', label: 'Contain' },
@@ -309,43 +323,16 @@ export class ImageTool extends BaseImageTool {
             { value: 'none', label: 'None' },
             { value: 'scale-down', label: 'Scale down' },
         ];
-
-        const objectFitRow = document.createElement('div');
-        objectFitRow.classList.add('ce-popover-item', 'ce-image-objectfit');
-
-        const objectFitIcon = document.createElement('div');
-        objectFitIcon.classList.add('ce-popover-item__icon');
-        const objectFitI = document.createElement('i');
-        objectFitI.innerHTML = '⤢';
-        objectFitIcon.append(objectFitI);
-        objectFitRow.append(objectFitIcon);
-
-        const objectFitTitle = document.createElement('div');
-        objectFitTitle.classList.add('ce-popover-item__title');
-        objectFitTitle.innerHTML = 'Object Fit';
-        objectFitRow.append(objectFitTitle);
-
-        const objectFitSelect = document.createElement('select');
-        objectFitSelect.classList.add('ce-image-objectfit__select');
-        for (const option of objectFitOptions) {
-            const optionEl = document.createElement('option');
-            optionEl.value = option.value;
-            optionEl.textContent = option.label;
-            objectFitSelect.append(optionEl);
-        }
-        objectFitSelect.value = (this as any).data.file?.objectFit || '';
-        objectFitSelect.addEventListener('keydown', (event) => event.stopPropagation());
-        objectFitSelect.addEventListener('change', () => {
-            const currentFile = (this as any).data.file || {};
-            currentFile.objectFit = objectFitSelect.value;
-            (this as any).data.file = currentFile;
-            this.applyImageSettings();
-        });
-        objectFitRow.append(objectFitSelect);
-
-        wrapperElement.append(objectFitRow);
-
-        return wrapperElement;
+        const current = (this as any).data.file?.objectFit || '';
+        return options.map((option) => ({
+            title: option.label,
+            isActive: current === option.value,
+            closeOnActivate: true,
+            onActivate: () => {
+                this.setFileAttr('objectFit', option.value);
+                (this as any).block?.dispatchChange?.();
+            },
+        }));
     }
 
     private applyImageSettings() {
@@ -371,6 +358,9 @@ export class ImageTool extends BaseImageTool {
         } else {
             imgElement.style.maxHeight = '';
         }
+
+        imgElement.style.width = fileData.width || '';
+        imgElement.style.height = fileData.height || '';
 
         if (fileData.objectFit) {
             imgElement.style.objectFit = fileData.objectFit;
