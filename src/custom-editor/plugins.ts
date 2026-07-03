@@ -257,7 +257,7 @@ export class ImageTool extends BaseImageTool {
         const sections: { label: string; fields: [string, string][] }[] = [
             {
                 label: 'Desktop',
-                fields: [['width', 'Width'], ['height', 'Height'], ['maxWidth', 'Max width'], ['maxHeight', 'Max height']],
+                fields: [['widthDesktop', 'Width'], ['heightDesktop', 'Height'], ['maxWidth', 'Max width'], ['maxHeight', 'Max height']],
             },
             {
                 label: 'Mobile (≤ 640px)',
@@ -359,8 +359,8 @@ export class ImageTool extends BaseImageTool {
             imgElement.style.maxHeight = '';
         }
 
-        imgElement.style.width = fileData.width || '';
-        imgElement.style.height = fileData.height || '';
+        imgElement.style.width = fileData.widthDesktop || '';
+        imgElement.style.height = fileData.heightDesktop || '';
 
         if (fileData.objectFit) {
             imgElement.style.objectFit = fileData.objectFit;

@@ -445,8 +445,8 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                     // applied by the front-end `.editorjs-image` rule + its @media query
                     // (mobile falls back to desktop). See the docs for the required CSS.
                     const cssVars: [any, string][] = [
-                        [file.width, '--iw'],
-                        [file.height, '--ih'],
+                        [file.widthDesktop, '--iw'],
+                        [file.heightDesktop, '--ih'],
                         [file.maxWidth, '--imw'],
                         [file.maxHeight, '--imh'],
                         [file.objectFit, '--of'],
