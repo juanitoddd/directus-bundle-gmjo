@@ -460,7 +460,12 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                         .map(([value, name]) => `${name}: ${escapeHtml(String(value))}`);
                     const styleAttr = styleRules.length ? ` style="${styleRules.join('; ')}"` : '';
 
-                    const img = `<img class="editorjs-image" src="${escapeHtml(url)}" alt="${caption}"${styleAttr} />`;
+                    // Native Directus focal point (from directus_files) → data attributes.
+                    let focalAttr = '';
+                    if (file.focal_point_x != null) focalAttr += ` data-focal-x="${escapeHtml(String(file.focal_point_x))}"`;
+                    if (file.focal_point_y != null) focalAttr += ` data-focal-y="${escapeHtml(String(file.focal_point_y))}"`;
+
+                    const img = `<img class="editorjs-image" src="${escapeHtml(url)}" alt="${caption}"${focalAttr}${styleAttr} />`;
 
                     const link = typeof file.link === 'string' ? file.link.trim() : '';
                     if (link) {

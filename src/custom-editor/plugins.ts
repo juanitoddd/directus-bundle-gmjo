@@ -98,6 +98,8 @@ class Uploader {
                 filename_download: string;
                 title: any;
                 id: string;
+                focal_point_x?: any;
+                focal_point_y?: any;
             }) => {
                 if (!file) {
                     this.onError({
@@ -118,6 +120,9 @@ class Uploader {
                         title: file.title,
                         extension: file.filename_download.split('.').pop(),
                         fileId: file.id,
+                        // Native Directus focal point (from directus_files).
+                        focal_point_x: file.focal_point_x ?? null,
+                        focal_point_y: file.focal_point_y ?? null,
                         fileURL:
                             `${this.config.uploader.baseURL}files/${file.id}`,
                         url: `${this.config.uploader.baseURL}assets/${file.id}`,
@@ -204,8 +209,38 @@ export class ImageTool extends BaseImageTool {
         // load. Re-apply it once editor.js has mounted the block content into
         // block.holder (which happens after render() returns).
         requestAnimationFrame(() => this.applyImageSettings());
+        this.ensureFocalPoint();
 
         return wrapper;
+    }
+
+    /**
+     * Backfill the native Directus focal point (focal_point_x/y from
+     * directus_files) onto data.file for images saved before it was captured.
+     */
+    private async ensureFocalPoint() {
+        const file = (this as any).data.file || {};
+        if (!file.fileId) return;
+        // Already captured (present even if null) → nothing to fetch.
+        if ('focal_point_x' in file || 'focal_point_y' in file) return;
+
+        const api = (this as any).config?.uploader?.api;
+        if (!api) return;
+
+        try {
+            const res = await api.get(`/files/${file.fileId}`, {
+                params: { fields: ['focal_point_x', 'focal_point_y'] },
+            });
+            const record = res?.data?.data;
+            if (!record) return;
+
+            file.focal_point_x = record.focal_point_x ?? null;
+            file.focal_point_y = record.focal_point_y ?? null;
+            (this as any).data.file = file;
+            (this as any).block?.dispatchChange?.();
+        } catch (e) {
+            // ignore — focal point stays unset
+        }
     }
 
     renderSettings(): MenuConfig {
