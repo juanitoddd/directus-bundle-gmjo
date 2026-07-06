@@ -614,6 +614,47 @@
 	margin-top: 0;
 }
 
+/* Image Reference block (editor placeholder card) */
+.codex-editor .ce-image-ref {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem;
+	border: 1px dashed var(--theme--form--field--input--border-color);
+	border-radius: var(--theme--border-radius);
+	background: var(--theme--form--field--input--background-subdued);
+}
+
+.ce-image-ref__icon {
+	flex: 0 0 auto;
+	display: flex;
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+.ce-image-ref__meta {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+.ce-image-ref__src {
+	font-family: var(--theme--fonts--monospace--font-family, monospace);
+	font-size: 0.85rem;
+	word-break: break-all;
+}
+
+.ce-image-ref__src.ce-image-ref__placeholder {
+	font-family: inherit;
+	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+.ce-image-ref__detail {
+	font-size: 0.75rem;
+	color: var(--theme--form--field--input--foreground-subdued);
+	word-break: break-all;
+}
+
 /* Component block */
 .codex-editor .ce-component-block {
 	border: 1px dashed var(--theme--form--field--input--border-color);
@@ -884,4 +925,21 @@
 	font-size: 0.85rem;
 	font-weight: 600;
 	color: var(--theme--form--field--input--foreground-subdued);
+}
+
+.editorjs-image {
+  width: var(--iw, var(--dw));
+  height: var(--ih, auto);
+  max-width: var(--imw, none);
+  max-height: var(--imh, none);
+  object-fit: var(--of, fill);
+  object-position: var(--op-x, 50%) var(--op-y, 50%);
+}
+@media (max-width: 768px) {
+  .editorjs-image {
+    width: var(--iw-m, var(--iw, var(--dw)));
+    height: var(--ih-m, var(--ih, auto));
+    max-width: var(--imw-m, var(--imw, none));
+    max-height: var(--imh-m, var(--imh, none));
+  }
 }

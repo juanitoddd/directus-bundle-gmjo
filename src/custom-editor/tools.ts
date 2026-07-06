@@ -24,6 +24,7 @@ import CollectionBlock from './tools/block-tools/collection-block';
 import DelimiterBlock from './tools/block-tools/delimiter-block';
 import ComponentBlock from './tools/block-tools/component-block';
 import AccordionBlock from './tools/block-tools/accordion-block';
+import ImageReferenceBlock from './tools/block-tools/image-reference-block';
 import { EDITOR_COLORS } from './tools/utils/colors';
 import { Flex } from './tools/tunes/flex';
 import { Grid } from './tools/tunes/grid';
@@ -228,6 +229,10 @@ export default function getTools(
                 uploader: uploaderConfig,
             },
             tunes: ['spacing', 'style'],
+        },
+        imagereference: {
+            class: ImageReferenceBlock,
+            tunes: ['alignment', 'spacing', 'style'],
         },
         // EXAMPLE (Part 4/4): add marker tool
         //     class: Marker,

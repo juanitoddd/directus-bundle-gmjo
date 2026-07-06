@@ -53,64 +53,19 @@ function ensureTrailingSlash(url: string): string {
 }
 
 /**
- * Read a `{{ … }}` token starting at `open`, matching the closing `}}` while
- * accounting for nested `{{ … }}` (e.g. inside an image token's attribute).
- * Returns the inner content and the index just past the closing `}}`, or null.
- */
-function readBraceToken(str: string, open: number): { content: string; end: number } | null {
-    let depth = 0;
-    let j = open;
-    while (j < str.length) {
-        if (str.startsWith('{{', j)) {
-            depth++;
-            j += 2;
-        } else if (str.startsWith('}}', j)) {
-            depth--;
-            j += 2;
-            if (depth === 0) return { content: str.slice(open + 2, j - 2), end: j };
-        } else {
-            j++;
-        }
-    }
-    return null;
-}
-
-/** Pull the field + attribute placeholder paths out of an `image:` token body. */
-function imageTokenPaths(content: string, add: (path: string) => void) {
-    const body = content.slice('image:'.length);
-    const commaIdx = body.indexOf(',');
-    const field = (commaIdx === -1 ? body : body.slice(0, commaIdx)).trim();
-    if (field) add(field);
-
-    const attrStr = commaIdx === -1 ? '' : body.slice(commaIdx + 1);
-    const re = new RegExp(PLACEHOLDER_RE.source, 'g');
-    let m: RegExpExecArray | null;
-    // eslint-disable-next-line no-cond-assign
-    while ((m = re.exec(attrStr)) !== null) {
-        const p = m[1].trim();
-        if (p) add(p);
-    }
-}
-
-/**
- * Collect every placeholder dot-path used in a template's blocks (recursively),
- * including paths nested inside an image token's attributes.
+ * Collect every placeholder dot-path used in a template's blocks (recursively).
  */
 export function collectTemplatePaths(blocks: any[] | undefined): string[] {
     const paths = new Set<string>();
     const add = (p: string) => paths.add(p);
 
     const scanString = (str: string) => {
-        let i = 0;
-        while (i < str.length) {
-            const open = str.indexOf('{{', i);
-            if (open === -1) break;
-            const token = readBraceToken(str, open);
-            if (!token) break;
-            const content = token.content.trim();
-            if (content.startsWith('image:')) imageTokenPaths(content, add);
-            else if (content) add(content);
-            i = token.end;
+        const re = new RegExp(PLACEHOLDER_RE.source, 'g');
+        let m: RegExpExecArray | null;
+        // eslint-disable-next-line no-cond-assign
+        while ((m = re.exec(str)) !== null) {
+            const p = m[1].trim();
+            if (p) add(p);
         }
     };
 
@@ -135,8 +90,9 @@ export function deriveTemplateFields(blocks: any[] | undefined): string[] {
 
 /**
  * Replace `{{dot.path}}` placeholders in a template's blocks with values from
- * `item`. File-valued placeholders become asset URLs (or a full <img> when the
- * placeholder is the entire field value). Returns a new blocks array.
+ * `item`. File-valued placeholders resolve to their plain asset URL. Image
+ * Reference blocks get their url/alt/link fields resolved too. Returns a new
+ * blocks array.
  */
 export function interpolateTemplate(
     blocks: any[] | undefined,
@@ -166,83 +122,9 @@ export function interpolateTemplate(
         return '';
     };
 
-    // Structured image token: image:<field>, alt="…", link="…", maxWidth="…", maxHeight="…"
-    const renderImageToken = (content: string): string => {
-        const body = content.slice('image:'.length);
-        const commaIdx = body.indexOf(',');
-        const field = (commaIdx === -1 ? body : body.slice(0, commaIdx)).trim();
-        const attrStr = commaIdx === -1 ? '' : body.slice(commaIdx + 1);
-
-        const attrs: Record<string, string> = {};
-        const attrRe = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
-        let m: RegExpExecArray | null;
-        // eslint-disable-next-line no-cond-assign
-        while ((m = attrRe.exec(attrStr)) !== null) {
-            attrs[m[1].toLowerCase()] = m[2] !== undefined ? m[2] : m[3];
-        }
-
-        const src = fileSrc(resolvePath(item, field, language));
-        if (!src) return '';
-
-        // Attribute values may mix static text with placeholders, e.g.
-        // alt="This is {{first_name}} {{last_name}}".
-        const interpAttr = (value: string) => value.replace(PLACEHOLDER_RE, (_m, p) => tokenValue(String(p).trim()));
-
-        const styleMap: [string, string][] = [
-            ['maxwidth', 'max-width'],
-            ['maxheight', 'max-height'],
-            ['width', 'width'],
-            ['height', 'height'],
-            ['objectFit', 'object-fit'],
-        ];
-        const styles = styleMap
-            .filter(([key]) => attrs[key])
-            .map(([key, css]) => `${css}: ${interpAttr(attrs[key])}`);
-        const styleAttr = styles.length ? ` style="${escapeHtml(styles.join('; '))}"` : '';
-        console.log("styleAttr", styleAttr)
-        const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(interpAttr(attrs.alt || ''))}"${styleAttr} />`;
-
-        const link = interpAttr(attrs.link || '').trim();
-        return link
-            ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${img}</a>`
-            : img;
-    };
-
-    const renderToken = (content: string): string => {
-        const trimmed = content.trim();
-        return trimmed.startsWith('image:') ? renderImageToken(trimmed) : tokenValue(trimmed);
-    };
-
-    const interpolateString = (str: string): string => {
-        // Whole-field single bare file placeholder → render a plain <img>.
-        const single = str.trim().match(/^\{\{\s*([^}]+?)\s*\}\}$/);
-        if (single && !single[1].trim().startsWith('image:')) {
-            const value = resolvePath(item, single[1].trim(), language);
-            if (isFileObject(value)) {
-                return `<img src="${assetUrl(value)}" alt="" />`;
-            }
-        }
-
-        // Brace-aware scan so tokens can contain nested {{ }} (e.g. image attrs).
-        let result = '';
-        let i = 0;
-        while (i < str.length) {
-            const open = str.indexOf('{{', i);
-            if (open === -1) {
-                result += str.slice(i);
-                break;
-            }
-            result += str.slice(i, open);
-            const token = readBraceToken(str, open);
-            if (!token) {
-                result += str.slice(open);
-                break;
-            }
-            result += renderToken(token.content);
-            i = token.end;
-        }
-        return result;
-    };
+    // Replace every `{{path}}` in a string with its resolved token value.
+    const interpolateString = (value: string): string =>
+        value.replace(PLACEHOLDER_RE, (_m, p) => tokenValue(String(p).trim()));
 
     const walk = (value: any): any => {
         if (typeof value === 'string') return interpolateString(value);
@@ -253,6 +135,27 @@ export function interpolateTemplate(
         }
         return value;
     };
+
+    // Image Reference blocks: resolve the url field to a plain asset URL (a
+    // single `{{file}}` placeholder → asset URL), and alt/link as interpolated
+    // text, BEFORE the generic walk (which then no-ops on the resolved values).
+    const resolveRefUrl = (raw: string): string => {
+        const single = raw.trim().match(/^\{\{\s*([^}]+?)\s*\}\}$/);
+        if (single) {
+            const resolved = fileSrc(resolvePath(item, single[1].trim(), language));
+            return resolved || tokenValue(single[1].trim());
+        }
+        return interpolateString(raw);
+    };
+
+    for (const block of clone) {
+        if (block && block.type === 'imagereference' && block.data) {
+            const d = block.data;
+            if (typeof d.url === 'string') d.url = resolveRefUrl(d.url);
+            if (typeof d.alt === 'string') d.alt = interpolateString(d.alt);
+            if (typeof d.link === 'string') d.link = interpolateString(d.link);
+        }
+    }
 
     return walk(clone);
 }
@@ -476,6 +379,42 @@ export function blocksToHtml(blocks: any[] | undefined, options: BlocksToHtmlOpt
                 }
                 else if (file.id) {
                     blockParts.push(`<div>Image: ${escapeHtml(String(file.id))}</div>`);
+                }
+                break;
+            }
+
+            case 'imagereference': {
+                // Dynamic image: src/alt/link are `{{token}}` expressions (or
+                // static text). Tokens are emitted verbatim and resolved later
+                // by interpolateTemplate (CMS preview) or by the front-end.
+                const url = typeof data.url === 'string' ? data.url.trim() : '';
+                const alt = escapeHtml(data.alt || '');
+
+                if (url) {
+                    const cssVars: [any, string][] = [
+                        [data.widthDesktop, '--iw'],
+                        [data.heightDesktop, '--ih'],
+                        [data.maxWidth, '--imw'],
+                        [data.maxHeight, '--imh'],
+                        [data.objectFit, '--of'],
+                        [data.widthMobile, '--iw-m'],
+                        [data.heightMobile, '--ih-m'],
+                        [data.maxWidthMobile, '--imw-m'],
+                        [data.maxHeightMobile, '--imh-m'],
+                    ];
+                    const styleRules = cssVars
+                        .filter(([value]) => value)
+                        .map(([value, name]) => `${name}: ${escapeHtml(String(value))}`);
+                    const styleAttr = styleRules.length ? ` style="${styleRules.join('; ')}"` : '';
+
+                    const img = `<img class="editorjs-image" src="${escapeHtml(url)}" alt="${alt}"${styleAttr} />`;
+
+                    const link = typeof data.link === 'string' ? data.link.trim() : '';
+                    if (link) {
+                        blockParts.push(`<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${img}</a>`);
+                    } else {
+                        blockParts.push(img);
+                    }
                 }
                 break;
             }

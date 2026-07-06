@@ -50,6 +50,7 @@ const props = withDefaults(
 			'delimiterblock',
 			'componentblock',
 			'accordionblock',
+			'imagereference',
 		],
 		font: 'sans-serif',
 	},
