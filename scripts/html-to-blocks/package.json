@@ -1,0 +1,14 @@
+{
+  "name": "biography-html-to-blocks",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "One-off: convert users_translations.biography (HTML) into editor.js block JSON stored in bio.",
+  "scripts": {
+    "start": "node html-to-blocks.mjs"
+  },
+  "dependencies": {
+    "node-html-parser": "^6.1.13",
+    "pg": "^8.13.1"
+  }
+}
