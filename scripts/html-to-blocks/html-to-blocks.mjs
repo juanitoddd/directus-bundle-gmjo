@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Convert users_translations.biography (HTML) into the editor.js block JSON
- * consumed by the custom block editor, and store it in users_translations.bio.
+ * Convert people_translations.biography (HTML) into the editor.js block JSON
+ * consumed by the custom block editor, and store it in people_translations.bio.
  *
  * Unlike the pure-SQL version, this preserves structure and inline formatting
  * by mapping HTML elements onto the exact block/inline tools the editor uses:
@@ -144,9 +144,9 @@ async function main() {
 
 	// Fails fast with a clear message if the bio field hasn't been created yet.
 	try {
-		await client.query('SELECT bio FROM users_translations LIMIT 1');
+		await client.query('SELECT bio FROM people_translations LIMIT 1');
 	} catch {
-		console.error('✖ Column users_translations.bio not found. Create the `bio` field in Directus first (Type: JSON, Interface: custom block editor).');
+		console.error('✖ Column people_translations.bio not found. Create the `bio` field in Directus first (Type: JSON, Interface: custom block editor).');
 		await client.end();
 		process.exit(1);
 	}
@@ -154,7 +154,7 @@ async function main() {
 	const where = OVERWRITE
 		? "biography IS NOT NULL AND biography <> ''"
 		: "biography IS NOT NULL AND biography <> '' AND bio IS NULL";
-	const { rows } = await client.query(`SELECT id, biography FROM users_translations WHERE ${where} ORDER BY id`);
+	const { rows } = await client.query(`SELECT id, biography FROM people_translations WHERE ${where} ORDER BY id`);
 
 	console.log(`${rows.length} row(s) to convert. Mode: ${APPLY ? 'APPLY (writing)' : 'DRY RUN (no writes)'}${OVERWRITE ? ' + overwrite' : ''}\n`);
 
@@ -162,7 +162,7 @@ async function main() {
 	for (const row of rows) {
 		const doc = htmlToBlocks(row.biography);
 		if (APPLY) {
-			await client.query('UPDATE users_translations SET bio = $1 WHERE id = $2', [doc, row.id]);
+			await client.query('UPDATE people_translations SET bio = $1 WHERE id = $2', [doc, row.id]);
 			written++;
 		} else {
 			console.log(`--- id ${row.id} ---`);
