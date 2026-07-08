@@ -100,6 +100,7 @@ class Uploader {
                 id: string;
                 focal_point_x?: any;
                 focal_point_y?: any;
+                image_credits?: any;
             }) => {
                 if (!file) {
                     this.onError({
@@ -123,6 +124,8 @@ class Uploader {
                         // Native Directus focal point (from directus_files).
                         focal_point_x: file.focal_point_x ?? null,
                         focal_point_y: file.focal_point_y ?? null,
+                        // Custom directus_files field.
+                        image_credits: file.image_credits ?? null,
                         fileURL:
                             `${this.config.uploader.baseURL}files/${file.id}`,
                         url: `${this.config.uploader.baseURL}assets/${file.id}`,
@@ -209,37 +212,39 @@ export class ImageTool extends BaseImageTool {
         // load. Re-apply it once editor.js has mounted the block content into
         // block.holder (which happens after render() returns).
         requestAnimationFrame(() => this.applyImageSettings());
-        this.ensureFocalPoint();
+        this.ensureFileMeta();
 
         return wrapper;
     }
 
     /**
-     * Backfill the native Directus focal point (focal_point_x/y from
-     * directus_files) onto data.file for images saved before it was captured.
+     * Backfill directus_files metadata (native focal point focal_point_x/y and
+     * the custom image_credits field) onto data.file for images saved before
+     * those values were captured.
      */
-    private async ensureFocalPoint() {
+    private async ensureFileMeta() {
         const file = (this as any).data.file || {};
         if (!file.fileId) return;
-        // Already captured (present even if null) → nothing to fetch.
-        if ('focal_point_x' in file || 'focal_point_y' in file) return;
+        // All values already captured (present even if null) → nothing to fetch.
+        if ('focal_point_x' in file && 'focal_point_y' in file && 'image_credits' in file) return;
 
         const api = (this as any).config?.uploader?.api;
         if (!api) return;
 
         try {
             const res = await api.get(`/files/${file.fileId}`, {
-                params: { fields: ['focal_point_x', 'focal_point_y'] },
+                params: { fields: ['focal_point_x', 'focal_point_y', 'image_credits'] },
             });
             const record = res?.data?.data;
             if (!record) return;
 
             file.focal_point_x = record.focal_point_x ?? null;
             file.focal_point_y = record.focal_point_y ?? null;
+            file.image_credits = record.image_credits ?? null;
             (this as any).data.file = file;
             (this as any).block?.dispatchChange?.();
         } catch (e) {
-            // ignore — focal point stays unset
+            // ignore — metadata stays unset
         }
     }
 
